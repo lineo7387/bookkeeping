@@ -9,3 +9,124 @@ generator client {
 datasource db {
   provider = "postgresql"
 }
+
+enum UserStatus {
+  active
+  disabled
+}
+
+enum LedgerType {
+  personal
+  family
+}
+
+enum LedgerMemberRole {
+  owner
+  admin
+  editor
+  viewer
+}
+
+enum LedgerMemberStatus {
+  active
+  invited
+  removed
+}
+
+enum LedgerInvitationStatus {
+  pending
+  accepted
+  expired
+  revoked
+}
+
+model User {
+  id           String         @id @default(uuid())
+  email        String         @unique
+  phone        String?        @unique
+  passwordHash String         @map("password_hash")
+  nickname     String
+  avatarUrl    String?        @map("avatar_url")
+  status       UserStatus     @default(active)
+  sessions     UserSession[]
+  ownedLedgers Ledger[]       @relation("LedgerOwner")
+  memberships  LedgerMember[]
+  createdAt    DateTime       @default(now()) @map("created_at")
+  updatedAt    DateTime       @updatedAt @map("updated_at")
+
+  @@map("users")
+}
+
+model UserSession {
+  id               String    @id @default(uuid())
+  userId           String    @map("user_id")
+  refreshTokenHash String    @map("refresh_token_hash")
+  userAgent        String?   @map("user_agent")
+  ipAddress        String?   @map("ip_address")
+  expiresAt        DateTime  @map("expires_at")
+  revokedAt        DateTime? @map("revoked_at")
+  createdAt        DateTime  @default(now()) @map("created_at")
+  updatedAt        DateTime  @updatedAt @map("updated_at")
+  user             User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([refreshTokenHash])
+  @@map("user_sessions")
+}
+
+model Ledger {
+  id              String             @id @default(uuid())
+  name            String
+  type            LedgerType
+  ownerId         String             @map("owner_id")
+  defaultCurrency String             @default("CNY") @map("default_currency")
+  timezone        String             @default("Asia/Shanghai")
+  archivedAt      DateTime?          @map("archived_at")
+  createdAt       DateTime           @default(now()) @map("created_at")
+  updatedAt       DateTime           @updatedAt @map("updated_at")
+  owner           User               @relation("LedgerOwner", fields: [ownerId], references: [id])
+  members         LedgerMember[]
+  invitations     LedgerInvitation[]
+
+  @@index([ownerId])
+  @@index([archivedAt])
+  @@map("ledgers")
+}
+
+model LedgerMember {
+  id        String             @id @default(uuid())
+  ledgerId  String             @map("ledger_id")
+  userId    String             @map("user_id")
+  role      LedgerMemberRole
+  status    LedgerMemberStatus @default(active)
+  joinedAt  DateTime?          @map("joined_at")
+  createdAt DateTime           @default(now()) @map("created_at")
+  updatedAt DateTime           @updatedAt @map("updated_at")
+  ledger    Ledger             @relation(fields: [ledgerId], references: [id], onDelete: Cascade)
+  user      User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([ledgerId, userId])
+  @@index([ledgerId, status])
+  @@index([userId, status])
+  @@map("ledger_members")
+}
+
+model LedgerInvitation {
+  id           String                 @id @default(uuid())
+  ledgerId     String                 @map("ledger_id")
+  inviterId    String                 @map("inviter_id")
+  inviteeEmail String?                @map("invitee_email")
+  inviteePhone String?                @map("invitee_phone")
+  role         LedgerMemberRole
+  token        String                 @unique
+  status       LedgerInvitationStatus @default(pending)
+  expiresAt    DateTime               @map("expires_at")
+  createdAt    DateTime               @default(now()) @map("created_at")
+  updatedAt    DateTime               @updatedAt @map("updated_at")
+  ledger       Ledger                 @relation(fields: [ledgerId], references: [id], onDelete: Cascade)
+
+  @@index([ledgerId, status])
+  @@index([inviteeEmail])
+  @@index([inviteePhone])
+  @@map("ledger_invitations")
+}
