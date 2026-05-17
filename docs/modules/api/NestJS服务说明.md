@@ -20,6 +20,11 @@ NestJS 服务是系统唯一对外业务 API，负责认证、权限、账本协
 - 配置：`@nestjs/config`
 - ORM：Prisma 7
 - 数据库：PostgreSQL
+- 已完成基础设施：`PrismaModule`、`PrismaService`、统一 `ApiResponse` helper、全局 ValidationPipe。
+- 已完成认证基础：用户注册、登录、刷新 token、退出、`GET /auth/me`、JWT Strategy 和 `JwtAuthGuard`。
+- 已完成账本基础：创建账本、查询账本列表/详情、更新账本、归档账本、成员列表、成员角色更新、移除成员。
+- 已完成权限基础：`LedgerPolicyService` 和 `LedgerPolicyGuard`，账本访问和管理权限通过 `ledger_members` 判断。
+- 已完成数据模型：`users`、`user_sessions`、`ledgers`、`ledger_members`、`ledger_invitations`。
 
 ## 环境变量
 
@@ -28,6 +33,7 @@ NestJS 服务是系统唯一对外业务 API，负责认证、权限、账本协
 ## 验证方式
 
 ```bash
+pnpm --filter @bookkeeping/api test
 pnpm --filter @bookkeeping/api typecheck
 pnpm --filter @bookkeeping/api build
 ```
@@ -37,8 +43,9 @@ pnpm --filter @bookkeeping/api build
 - 增加全局异常过滤器。
 - 增加统一响应拦截器。
 - 增加请求日志和审计日志。
-- 增加 PrismaService。
-- 增加认证、账本、成员和权限模块。
+- 增加认证 E2E 测试和真实数据库集成测试。
+- 增加邀请链接和邀请接受流程。
+- 增加账户、分类、流水、AI 任务编排模块。
 
 ## M1 模块文档
 

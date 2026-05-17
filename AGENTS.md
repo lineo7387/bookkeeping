@@ -27,6 +27,7 @@
 
 - 已初始化 pnpm workspace。
 - 已创建 `apps/api`：NestJS 11、Prisma 7、`@nestjs/config`、`.env.example`。
+- `apps/api` 已完成 M1 基础能力：PrismaService、认证与会话、JWT Guard、用户资料、账本、成员角色、Ledger Policy 层和对应单元测试。
 - 已创建 `apps/admin-web`：Vue 3、TypeScript、Vite、Tailwind CSS、lucide-vue-next。
 - 后台首页位于 `apps/admin-web/src/views/DashboardView.vue`。
 - 后台 Web 当前使用静态数据，尚未接入真实 API。
@@ -78,4 +79,4 @@ git status --short --branch
 git log --oneline -8
 ```
 
-当前优先方向是继续完成 M0：AI 服务规范化、共享包、API client、后续脚手架计划，以及是否推送 `main` 到远端。
+当前分支建议从 `main` 新建功能分支。M1 账号、认证、账本、成员权限和 Policy 层已在 `codex/m1-auth-ledger-policy` 完成并通过验证；后续优先方向是 review/合并 M1，随后继续 M1/M2 的账户、分类、流水、AI 编排或后续脚手架。
