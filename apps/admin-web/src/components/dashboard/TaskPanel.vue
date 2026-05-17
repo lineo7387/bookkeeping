@@ -9,7 +9,7 @@ defineProps<{
 </script>
 
 <template>
-  <section class="panel rounded-[32px] border border-white/70 p-6" aria-labelledby="task-panel-title">
+  <section class="panel rounded-[28px] border border-white/70 p-5" aria-labelledby="task-panel-title">
     <div class="flex items-center justify-between gap-4">
       <div>
         <p class="m-0 text-xs font-bold text-[var(--clay-muted)]">待处理</p>
@@ -34,8 +34,10 @@ defineProps<{
 
 <style scoped>
 .panel {
-  background: var(--clay-surface);
-  box-shadow: var(--clay-shadow-card);
+  background: rgba(255, 255, 255, 0.68);
+  box-shadow:
+    10px 14px 28px rgba(160, 150, 180, 0.14),
+    -8px -8px 20px rgba(255, 255, 255, 0.7);
   backdrop-filter: blur(20px);
 }
 

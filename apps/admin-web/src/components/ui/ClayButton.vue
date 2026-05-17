@@ -13,7 +13,7 @@ withDefaults(
 
 <template>
   <button
-    class="clay-button inline-flex min-h-[52px] cursor-pointer items-center justify-center gap-2.5 rounded-[20px] border-0 px-5 font-extrabold transition duration-200 focus-visible:outline-4 focus-visible:outline-offset-3 focus-visible:outline-violet-300"
+    class="clay-button inline-flex min-h-11 cursor-pointer items-center justify-center gap-2.5 rounded-2xl border-0 px-4 text-sm font-extrabold transition duration-200 focus-visible:outline-4 focus-visible:outline-offset-3 focus-visible:outline-violet-300"
     :class="`clay-button-${variant}`"
     type="button"
   >
@@ -31,11 +31,13 @@ withDefaults(
 .clay-button-secondary {
   color: var(--clay-foreground);
   background: var(--clay-surface-strong);
-  box-shadow: var(--clay-shadow-card);
+  box-shadow:
+    8px 10px 20px rgba(160, 150, 180, 0.14),
+    -6px -6px 16px rgba(255, 255, 255, 0.72);
 }
 
 .clay-button:hover {
-  transform: translateY(-3px);
+  transform: translateY(-2px);
 }
 
 .clay-button:active {

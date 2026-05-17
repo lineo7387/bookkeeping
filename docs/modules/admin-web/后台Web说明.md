@@ -32,6 +32,8 @@
 ## 设计规则
 
 - 视觉风格遵循根目录 `designer.md`。
+- 后台采用克制版 Soft Clay Admin：保留圆润、柔和阴影和品牌色，但降低装饰密度，优先保证信息扫描效率。
+- 侧边栏和导航应保持轻量，不使用强按压阴影作为默认 active 状态。
 - 页面层必须放在 `views` 目录。
 - 组件使用 Vue 3 Composition API 和 `<script setup lang="ts">`。
 - 页面组件负责组合，展示组件通过 props 接收数据。

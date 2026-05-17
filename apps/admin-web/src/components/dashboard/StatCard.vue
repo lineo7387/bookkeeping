@@ -11,8 +11,8 @@ defineProps<{
 </script>
 
 <template>
-  <article class="stat-card grid min-h-[174px] gap-2.5 rounded-[32px] border border-white/70 p-5 transition duration-200">
-    <div class="grid h-12 w-12 place-items-center rounded-[18px] text-white" :class="`tone-${tone}`">
+  <article class="stat-card grid min-h-[154px] gap-2 rounded-[26px] border border-white/70 p-5 transition duration-200">
+    <div class="grid h-11 w-11 place-items-center rounded-2xl text-white" :class="`tone-${tone}`">
       <component :is="icon" :size="24" aria-hidden="true" />
     </div>
     <p class="m-0 font-bold text-[var(--clay-muted)]">{{ label }}</p>
@@ -23,13 +23,15 @@ defineProps<{
 
 <style scoped>
 .stat-card {
-  background: var(--clay-surface);
-  box-shadow: var(--clay-shadow-card);
+  background: rgba(255, 255, 255, 0.68);
+  box-shadow:
+    10px 14px 28px rgba(160, 150, 180, 0.14),
+    -8px -8px 20px rgba(255, 255, 255, 0.7);
   backdrop-filter: blur(20px);
 }
 
 .stat-card:hover {
-  transform: translateY(-6px);
+  transform: translateY(-3px);
 }
 
 .tone-violet {

@@ -6,8 +6,8 @@ import {
   CircleDollarSign,
   ClipboardCheck,
   DatabaseZap,
-  FileText,
   Home,
+  Search,
   ShieldCheck,
   Users,
 } from 'lucide-vue-next'
@@ -81,21 +81,21 @@ const activities = [
 </script>
 
 <template>
-  <div class="grid min-h-screen gap-6 p-6 max-[860px]:p-4 min-[1121px]:grid-cols-[280px_minmax(0,1fr)]">
-    <aside class="sidebar rounded-[44px] border border-white/70 p-6 min-[1121px]:sticky min-[1121px]:top-6 min-[1121px]:h-[calc(100vh-48px)]" aria-label="后台导航">
+  <div class="grid min-h-screen gap-6 p-6 max-[860px]:p-4 min-[1121px]:grid-cols-[248px_minmax(0,1fr)]">
+    <aside class="sidebar rounded-[28px] border border-white/80 p-4 min-[1121px]:sticky min-[1121px]:top-6 min-[1121px]:h-[calc(100vh-48px)]" aria-label="后台导航">
       <div class="flex min-w-0 items-center gap-3.5">
-        <div class="brand-mark grid h-[54px] w-[54px] shrink-0 place-items-center rounded-[20px] font-['Nunito'] text-[26px] font-black text-white">B</div>
+        <div class="brand-mark grid h-11 w-11 shrink-0 place-items-center rounded-2xl font-['Nunito'] text-xl font-black text-white">B</div>
         <div>
           <p class="m-0 text-xs font-bold text-[var(--clay-muted)]">Bookkeeping</p>
-          <h1 class="m-0 font-['Nunito'] text-xl font-black text-[var(--clay-foreground)] max-[560px]:text-lg">智能记账后台</h1>
+          <h1 class="m-0 font-['Nunito'] text-lg font-black text-[var(--clay-foreground)]">智能记账后台</h1>
         </div>
       </div>
 
-      <nav class="mt-8 grid gap-3 max-[1120px]:grid-cols-5 max-[860px]:grid-cols-2">
+      <nav class="mt-7 grid gap-1.5 max-[1120px]:grid-cols-5 max-[860px]:grid-cols-2">
         <button
           v-for="item in navItems"
           :key="item.label"
-          class="nav-item flex min-h-[52px] w-full cursor-pointer items-center gap-3 rounded-[20px] border-0 bg-transparent px-4 text-[var(--clay-muted)] transition duration-200 max-[1120px]:justify-center"
+          class="nav-item relative flex min-h-11 w-full cursor-pointer items-center gap-3 rounded-[16px] border-0 bg-transparent px-3 text-sm font-bold text-[var(--clay-muted)] transition duration-200 max-[1120px]:justify-center"
           :class="{ 'nav-item-active': item.active }"
           type="button"
         >
@@ -105,13 +105,17 @@ const activities = [
       </nav>
     </aside>
 
-    <main class="grid min-w-0 content-start gap-6">
-      <header class="flex min-h-[76px] items-center justify-between gap-4 max-[860px]:flex-col max-[860px]:items-start">
+    <main class="grid min-w-0 content-start gap-5">
+      <header class="topbar flex min-h-[76px] items-center justify-between gap-4 rounded-[28px] border border-white/70 px-5 py-4 max-[860px]:flex-col max-[860px]:items-start">
         <div>
           <p class="m-0 text-xs font-bold text-[var(--clay-muted)]">M0 工程底座</p>
           <h2 class="m-0 font-['Nunito'] text-[34px] font-black text-[var(--clay-foreground)] max-[560px]:text-[28px]">运营总览</h2>
         </div>
-        <div class="flex flex-wrap justify-end gap-4 max-[860px]:w-full max-[860px]:justify-stretch">
+        <div class="flex flex-wrap justify-end gap-3 max-[860px]:w-full max-[860px]:justify-stretch">
+          <label class="search-box flex min-h-11 min-w-[260px] items-center gap-2 rounded-2xl px-4 text-sm text-[var(--clay-muted)] max-[560px]:w-full max-[560px]:min-w-0">
+            <Search :size="18" aria-hidden="true" />
+            <span>搜索用户、账本或 AI 任务</span>
+          </label>
           <ClayButton variant="secondary" aria-label="查看通知">
             <Bell :size="20" aria-hidden="true" />
           </ClayButton>
@@ -122,25 +126,28 @@ const activities = [
         </div>
       </header>
 
-      <section class="hero-panel grid min-h-[260px] grid-cols-[minmax(0,1.35fr)_minmax(260px,0.65fr)] gap-6 overflow-hidden rounded-[44px] border border-white/70 p-8 max-[860px]:grid-cols-1 max-[560px]:rounded-[28px] max-[560px]:p-5" aria-labelledby="hero-title">
-        <div class="grid max-w-[760px] content-center gap-3.5">
+      <section class="status-panel grid grid-cols-[minmax(0,1fr)_280px] gap-5 rounded-[28px] border border-white/70 p-5 max-[860px]:grid-cols-1" aria-labelledby="hero-title">
+        <div class="grid content-center gap-3">
           <p class="m-0 text-xs font-bold text-[var(--clay-muted)]">家庭共享账本 · AI 候选确认 · 私密流水</p>
-          <h2 id="hero-title" class="m-0 max-w-[720px] font-['Nunito'] text-[44px] leading-[1.12] font-black text-[var(--clay-foreground)] max-[860px]:text-[34px] max-[560px]:text-[28px]">
-            把账本、成员、AI 任务放在一个清晰的工作台里。
+          <h2 id="hero-title" class="m-0 max-w-[720px] font-['Nunito'] text-[30px] leading-tight font-black text-[var(--clay-foreground)] max-[560px]:text-2xl">
+            今日需要关注 3 类运营事项
           </h2>
-          <p class="m-0 max-w-[660px] text-[17px] font-medium text-[var(--clay-muted)]">
-            后台第一屏服务于排查和运营：看系统健康、看 AI 队列、看账本协作风险，后续模块会按中文文档逐步接入真实接口。
+          <p class="m-0 max-w-[720px] text-base font-medium text-[var(--clay-muted)]">
+            AI 队列、账本邀请和权限文档是当前 M0 阶段的主要关注点。后续模块会按中文文档逐步接入真实接口。
           </p>
         </div>
-        <div class="hero-object relative min-h-[220px] max-[560px]:min-h-[168px]" aria-hidden="true">
-          <div class="orb orb-violet">
-            <FileText :size="38" />
+        <div class="status-stack grid gap-3">
+          <div class="status-row">
+            <span class="status-dot status-dot-green" />
+            <span>API build/typecheck 通过</span>
           </div>
-          <div class="orb orb-blue">
-            <Bot :size="34" />
+          <div class="status-row">
+            <span class="status-dot status-dot-blue" />
+            <span>PostgreSQL / Redis 已预留配置</span>
           </div>
-          <div class="orb orb-green">
-            <ShieldCheck :size="32" />
+          <div class="status-row">
+            <span class="status-dot status-dot-violet" />
+            <span>AI 候选确认流程已规范</span>
           </div>
         </div>
       </section>
@@ -167,22 +174,46 @@ const activities = [
 
 <style scoped>
 .sidebar,
-.hero-panel {
-  background: var(--clay-surface);
-  box-shadow: var(--clay-shadow-card);
+.topbar,
+.status-panel {
+  background: rgba(255, 255, 255, 0.68);
+  box-shadow:
+    10px 14px 30px rgba(160, 150, 180, 0.14),
+    -8px -8px 20px rgba(255, 255, 255, 0.75);
   backdrop-filter: blur(20px);
 }
 
 .brand-mark {
   background: linear-gradient(145deg, var(--clay-violet-soft), var(--clay-violet));
-  box-shadow: var(--clay-shadow-button);
+  box-shadow:
+    8px 10px 18px rgba(124, 58, 237, 0.22),
+    inset 3px 3px 6px rgba(255, 255, 255, 0.38);
 }
 
-.nav-item:hover,
+.search-box {
+  background: rgba(244, 241, 250, 0.76);
+  box-shadow: var(--clay-shadow-pressed);
+}
+
+.nav-item:hover {
+  color: var(--clay-foreground);
+  background: rgba(255, 255, 255, 0.54);
+}
+
 .nav-item-active {
   color: var(--clay-foreground);
-  background: rgba(255, 255, 255, 0.76);
-  box-shadow: var(--clay-shadow-pressed);
+  background: rgba(255, 255, 255, 0.82);
+  box-shadow: 6px 8px 18px rgba(160, 150, 180, 0.12);
+}
+
+.nav-item-active::before {
+  position: absolute;
+  left: 8px;
+  width: 4px;
+  height: 20px;
+  border-radius: 999px;
+  background: var(--clay-violet);
+  content: '';
 }
 
 .nav-item:active {
@@ -194,58 +225,35 @@ const activities = [
   outline-offset: 3px;
 }
 
-.orb {
-  position: absolute;
-  display: grid;
-  place-items: center;
+.status-row {
+  display: flex;
+  min-height: 42px;
+  align-items: center;
+  gap: 10px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.58);
+  padding: 0 12px;
+  color: var(--clay-muted);
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.status-dot {
+  width: 9px;
+  height: 9px;
+  flex: 0 0 auto;
   border-radius: 999px;
-  color: #ffffff;
-  box-shadow: var(--clay-shadow-button);
-  animation: clay-breathe 6s ease-in-out infinite;
 }
 
-.orb-violet {
-  top: 20px;
-  right: 54px;
-  width: 118px;
-  height: 118px;
-  background: linear-gradient(145deg, #a78bfa, #7c3aed);
+.status-dot-green {
+  background: var(--clay-green);
 }
 
-.orb-blue {
-  top: 108px;
-  right: 150px;
-  width: 92px;
-  height: 92px;
-  background: linear-gradient(145deg, #38bdf8, #0ea5e9);
-  animation-delay: 1s;
+.status-dot-blue {
+  background: var(--clay-blue);
 }
 
-.orb-green {
-  right: 34px;
-  bottom: 12px;
-  width: 82px;
-  height: 82px;
-  background: linear-gradient(145deg, #34d399, #10b981);
-  animation-delay: 2s;
-}
-
-@media (max-width: 560px) {
-  .orb-violet {
-    right: 34px;
-    width: 96px;
-    height: 96px;
-  }
-
-  .orb-blue {
-    right: 120px;
-    width: 76px;
-    height: 76px;
-  }
-
-  .orb-green {
-    width: 70px;
-    height: 70px;
-  }
+.status-dot-violet {
+  background: var(--clay-violet);
 }
 </style>
