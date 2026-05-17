@@ -82,6 +82,22 @@ importers:
         specifier: ^5.9.3
         version: 5.9.3
 
+  packages/api-client:
+    dependencies:
+      '@bookkeeping/shared-types':
+        specifier: workspace:*
+        version: link:../shared-types
+    devDependencies:
+      typescript:
+        specifier: ~6.0.2
+        version: 6.0.3
+
+  packages/shared-types:
+    devDependencies:
+      typescript:
+        specifier: ~6.0.2
+        version: 6.0.3
+
 packages:
 
   '@angular-devkit/core@19.2.24':
