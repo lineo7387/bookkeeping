@@ -40,19 +40,54 @@ enum LedgerInvitationStatus {
   revoked
 }
 
+enum AccountType {
+  cash
+  bank_card
+  alipay
+  wechat
+  credit_card
+  other
+}
+
+enum ResourceVisibility {
+  ledger
+  private
+  selected_members
+}
+
+enum CategoryType {
+  income
+  expense
+}
+
+enum TransactionType {
+  income
+  expense
+  transfer
+}
+
+enum TransactionSource {
+  manual
+  ai_text
+  ocr
+  import
+}
+
 model User {
-  id           String         @id @default(uuid())
-  email        String         @unique
-  phone        String?        @unique
-  passwordHash String         @map("password_hash")
-  nickname     String
-  avatarUrl    String?        @map("avatar_url")
-  status       UserStatus     @default(active)
-  sessions     UserSession[]
-  ownedLedgers Ledger[]       @relation("LedgerOwner")
-  memberships  LedgerMember[]
-  createdAt    DateTime       @default(now()) @map("created_at")
-  updatedAt    DateTime       @updatedAt @map("updated_at")
+  id                  String        @id @default(uuid())
+  email               String        @unique
+  phone               String?       @unique
+  passwordHash        String        @map("password_hash")
+  nickname            String
+  avatarUrl           String?       @map("avatar_url")
+  status              UserStatus    @default(active)
+  sessions            UserSession[]
+  ownedLedgers        Ledger[]      @relation("LedgerOwner")
+  memberships         LedgerMember[]
+  ownedAccounts       Account[]     @relation("AccountOwner")
+  createdTransactions Transaction[] @relation("TransactionCreator")
+  createdAt           DateTime      @default(now()) @map("created_at")
+  updatedAt           DateTime      @updatedAt @map("updated_at")
 
   @@map("users")
 }
@@ -87,6 +122,9 @@ model Ledger {
   owner           User               @relation("LedgerOwner", fields: [ownerId], references: [id])
   members         LedgerMember[]
   invitations     LedgerInvitation[]
+  accounts        Account[]
+  categories      Category[]
+  transactions    Transaction[]
 
   @@index([ownerId])
   @@index([archivedAt])
@@ -129,4 +167,83 @@ model LedgerInvitation {
   @@index([inviteeEmail])
   @@index([inviteePhone])
   @@map("ledger_invitations")
+}
+
+model Account {
+  id             String             @id @default(uuid())
+  ledgerId       String             @map("ledger_id")
+  name           String
+  type           AccountType
+  currency       String             @default("CNY")
+  initialBalance Decimal            @default(0) @map("initial_balance") @db.Decimal(18, 2)
+  currentBalance Decimal            @default(0) @map("current_balance") @db.Decimal(18, 2)
+  visibility     ResourceVisibility @default(ledger)
+  ownerId        String             @map("owner_id")
+  sortOrder      Int                @default(0) @map("sort_order")
+  createdAt      DateTime           @default(now()) @map("created_at")
+  updatedAt      DateTime           @updatedAt @map("updated_at")
+  archivedAt     DateTime?          @map("archived_at")
+  ledger         Ledger             @relation(fields: [ledgerId], references: [id], onDelete: Cascade)
+  owner          User               @relation("AccountOwner", fields: [ownerId], references: [id])
+  transactions   Transaction[]
+
+  @@index([ledgerId, visibility])
+  @@index([ledgerId, archivedAt])
+  @@index([ownerId])
+  @@map("accounts")
+}
+
+model Category {
+  id           String        @id @default(uuid())
+  ledgerId     String        @map("ledger_id")
+  parentId     String?       @map("parent_id")
+  type         CategoryType
+  name         String
+  icon         String?
+  color        String?
+  isSystem     Boolean       @default(false) @map("is_system")
+  sortOrder    Int           @default(0) @map("sort_order")
+  createdAt    DateTime      @default(now()) @map("created_at")
+  updatedAt    DateTime      @updatedAt @map("updated_at")
+  archivedAt   DateTime?     @map("archived_at")
+  ledger       Ledger        @relation(fields: [ledgerId], references: [id], onDelete: Cascade)
+  parent       Category?     @relation("CategoryTree", fields: [parentId], references: [id], onDelete: SetNull)
+  children     Category[]    @relation("CategoryTree")
+  transactions Transaction[]
+
+  @@index([ledgerId, type])
+  @@index([ledgerId, archivedAt])
+  @@index([parentId])
+  @@map("categories")
+}
+
+model Transaction {
+  id         String             @id @default(uuid())
+  ledgerId   String             @map("ledger_id")
+  accountId  String             @map("account_id")
+  categoryId String?            @map("category_id")
+  type       TransactionType
+  amount     Decimal            @db.Decimal(18, 2)
+  currency   String             @default("CNY")
+  occurredAt DateTime           @map("occurred_at")
+  merchant   String?
+  note       String?
+  visibility ResourceVisibility @default(ledger)
+  createdBy  String             @map("created_by")
+  source     TransactionSource  @default(manual)
+  metadata   Json               @default("{}") @db.JsonB
+  createdAt  DateTime           @default(now()) @map("created_at")
+  updatedAt  DateTime           @updatedAt @map("updated_at")
+  deletedAt  DateTime?          @map("deleted_at")
+  ledger     Ledger             @relation(fields: [ledgerId], references: [id], onDelete: Cascade)
+  account    Account            @relation(fields: [accountId], references: [id])
+  category   Category?          @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  creator    User               @relation("TransactionCreator", fields: [createdBy], references: [id])
+
+  @@index([ledgerId, occurredAt])
+  @@index([ledgerId, categoryId])
+  @@index([ledgerId, accountId])
+  @@index([createdBy])
+  @@index([ledgerId, deletedAt])
+  @@map("transactions")
 }
