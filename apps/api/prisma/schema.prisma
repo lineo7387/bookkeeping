@@ -1,0 +1,11 @@
+// Bookkeeping Prisma schema.
+// Models will be added feature by feature with matching Chinese module docs.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}

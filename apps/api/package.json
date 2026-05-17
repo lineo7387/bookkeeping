@@ -1,0 +1,39 @@
+{
+  "name": "@bookkeeping/api",
+  "version": "1.0.0",
+  "description": "NestJS API service for the Bookkeeping platform.",
+  "main": "dist/src/main",
+  "scripts": {
+    "build": "nest build",
+    "dev": "nest start --watch",
+    "prisma": "prisma",
+    "prisma:generate": "prisma generate",
+    "prisma:migrate": "prisma migrate dev",
+    "prisma:studio": "prisma studio",
+    "start": "nest start",
+    "start:dev": "nest start --watch",
+    "start:prod": "node dist/src/main",
+    "typecheck": "tsc --noEmit"
+  },
+  "keywords": [],
+  "author": "lineo7387",
+  "license": "UNLICENSED",
+  "packageManager": "pnpm@10.33.0",
+  "dependencies": {
+    "@nestjs/common": "^11.1.21",
+    "@nestjs/config": "^4.0.4",
+    "@nestjs/core": "^11.1.21",
+    "@nestjs/platform-express": "^11.1.21",
+    "@prisma/client": "^7.8.0",
+    "dotenv": "^17.3.0",
+    "dotenv": "^17.4.2",
+    "reflect-metadata": "~0.2.2"
+  },
+  "devDependencies": {
+    "@nestjs/cli": "^11.0.21",
+    "@nestjs/schematics": "^11.1.0",
+    "@types/node": "^25.8.0",
+    "prisma": "^7.8.0",
+    "typescript": "^5.9.3"
+  }
+}
