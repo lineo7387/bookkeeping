@@ -90,7 +90,7 @@ Expected: `apps/api/package.json` contains these dependencies and `pnpm-lock.yam
 Run:
 
 ```bash
-pnpm --filter @bookkeeping/api add -D @nestjs/testing supertest @types/supertest @types/passport-jwt
+pnpm --filter @bookkeeping/api add -D @nestjs/testing jest ts-jest @types/jest supertest @types/supertest @types/passport-jwt
 ```
 
 Expected: `apps/api/package.json` contains these dev dependencies and `pnpm-lock.yaml` is updated.
