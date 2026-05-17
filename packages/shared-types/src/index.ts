@@ -58,9 +58,65 @@ export interface LedgerSummary {
   };
 }
 
+export type AccountType = 'cash' | 'bank_card' | 'alipay' | 'wechat' | 'credit_card' | 'other';
+
+export type AccountVisibility = 'ledger' | 'private';
+
+export interface AccountSummary {
+  id: string;
+  ledgerId: string;
+  name: string;
+  type: AccountType;
+  currency: string;
+  initialBalance: string;
+  currentBalance: string;
+  visibility: AccountVisibility;
+  ownerId: string;
+  sortOrder: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type CategoryType = 'income' | 'expense';
+
+export interface CategorySummary {
+  id: string;
+  ledgerId: string;
+  parentId: string | null;
+  type: CategoryType;
+  name: string;
+  icon: string | null;
+  color: string | null;
+  isSystem: boolean;
+  sortOrder: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export type TransactionType = 'income' | 'expense' | 'transfer';
 
 export type TransactionVisibility = 'ledger' | 'private' | 'selected_members';
+
+export type TransactionSource = 'manual' | 'ai_text' | 'ocr' | 'import';
+
+export interface TransactionSummary {
+  id: string;
+  ledgerId: string;
+  accountId: string;
+  categoryId: string | null;
+  type: TransactionType;
+  amount: string;
+  currency: string;
+  occurredAt: string;
+  merchant: string | null;
+  note: string | null;
+  visibility: TransactionVisibility;
+  createdBy: string;
+  source: TransactionSource;
+  metadata: Record<string, unknown> | null;
+  createdAt: string;
+  updatedAt: string;
+}
 
 export type AiTaskStatus = 'pending' | 'processing' | 'succeeded' | 'failed';
 
