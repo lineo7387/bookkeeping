@@ -19,8 +19,18 @@
 - 数据库：PostgreSQL。
 - 缓存和队列：Redis + BullMQ。
 - 后台 Web：Vue 3 + TypeScript + Vite。
+- 后台 Web 样式：Tailwind CSS 优先，组件私有样式使用 Vue SFC scoped style。
 - 用户多端：uni-app + Vue 3 + TypeScript。
 - ORM：Prisma。
+
+## 当前工程状态
+
+- 已初始化 pnpm workspace。
+- 已创建 `apps/api`：NestJS 11、Prisma 7、`@nestjs/config`、`.env.example`。
+- 已创建 `apps/admin-web`：Vue 3、TypeScript、Vite、Tailwind CSS、lucide-vue-next。
+- 后台首页位于 `apps/admin-web/src/views/DashboardView.vue`。
+- 后台 Web 当前使用静态数据，尚未接入真实 API。
+- 尚未创建 `apps/ai-service`、`apps/mobile`、`packages/shared-types`、`packages/api-client`。
 
 ## 协作规则
 
@@ -33,6 +43,12 @@
 - 所有交易归属于 `ledger`，不要直接建模为只归属于 `user`。
 - 所有协作权限通过 `ledger_members` 和 Policy 层判断。
 - 前端视觉实现必须优先遵循根目录 `designer.md`。
+- 后台 Web 采用克制版 Soft Clay Admin：保留圆润、柔和阴影和品牌色，但降低装饰密度，优先保证信息扫描效率。
+- 页面文件必须放在 `views` 目录。
+- 全局样式只放 token、字体、reset、动画等跨应用内容。
+- 组件独有样式写在对应 `.vue` 文件的 `<style scoped>` 中。
+- 前端布局和常规样式优先使用 Tailwind CSS。
+- 不要把后台侧边栏、表格、列表等信息密集区域做成过度黏土化或展示页风格。
 
 ## 修改前检查
 
@@ -44,3 +60,14 @@
 4. 对应功能的中文模块文档
 
 如果对应功能文档不存在，应先创建文档，再实现代码。
+
+## 新对话建议
+
+如果在新对话继续开发，优先使用 Superpowers 的 `subagent-driven-development` 模式，并先检查：
+
+```bash
+git status --short --branch
+git log --oneline -8
+```
+
+当前优先方向是继续完成 M0：AI 服务规范化、共享包、API client、后续脚手架计划，以及是否推送 `main` 到远端。
