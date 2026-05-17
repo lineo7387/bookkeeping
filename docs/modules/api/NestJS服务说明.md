@@ -39,3 +39,8 @@ pnpm --filter @bookkeeping/api build
 - 增加请求日志和审计日志。
 - 增加 PrismaService。
 - 增加认证、账本、成员和权限模块。
+
+## M1 模块文档
+
+- `docs/modules/auth/认证与会话说明.md`
+- `docs/modules/ledgers/账本与成员权限说明.md`
