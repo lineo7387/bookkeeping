@@ -29,16 +29,97 @@ export class LedgerPolicyService {
     return member ? EDITOR_ROLES.has(member.role) : false;
   }
 
-  canUpdateTransaction(_userId: string, _transactionId: string): Promise<boolean> {
-    return Promise.resolve(false);
+  async canUpdateTransaction(userId: string, transactionId: string): Promise<boolean> {
+    const transaction = await this.prisma.transaction.findUnique({
+      where: { id: transactionId },
+      select: {
+        ledgerId: true,
+        visibility: true,
+        createdBy: true,
+        deletedAt: true,
+      },
+    });
+
+    if (!transaction || transaction.deletedAt) {
+      return false;
+    }
+
+    const member = await this.findActiveMember(userId, transaction.ledgerId);
+    if (!member) {
+      return false;
+    }
+
+    if (transaction.visibility === 'private') {
+      return transaction.createdBy === userId;
+    }
+
+    if (transaction.visibility === 'ledger') {
+      return MANAGER_ROLES.has(member.role) || (member.role === 'editor' && transaction.createdBy === userId);
+    }
+
+    return false;
   }
 
-  canViewTransaction(_userId: string, _transactionId: string): Promise<boolean> {
-    return Promise.resolve(false);
+  async canViewTransaction(userId: string, transactionId: string): Promise<boolean> {
+    const transaction = await this.prisma.transaction.findUnique({
+      where: { id: transactionId },
+      select: {
+        ledgerId: true,
+        visibility: true,
+        createdBy: true,
+        deletedAt: true,
+      },
+    });
+
+    if (!transaction || transaction.deletedAt) {
+      return false;
+    }
+
+    const member = await this.findActiveMember(userId, transaction.ledgerId);
+    if (!member) {
+      return false;
+    }
+
+    if (transaction.visibility === 'private') {
+      return transaction.createdBy === userId;
+    }
+
+    if (transaction.visibility === 'ledger') {
+      return true;
+    }
+
+    return false;
   }
 
-  canViewAccount(_userId: string, _accountId: string): Promise<boolean> {
-    return Promise.resolve(false);
+  async canViewAccount(userId: string, accountId: string): Promise<boolean> {
+    const account = await this.prisma.account.findUnique({
+      where: { id: accountId },
+      select: {
+        ledgerId: true,
+        visibility: true,
+        ownerId: true,
+        archivedAt: true,
+      },
+    });
+
+    if (!account || account.archivedAt) {
+      return false;
+    }
+
+    const member = await this.findActiveMember(userId, account.ledgerId);
+    if (!member) {
+      return false;
+    }
+
+    if (account.visibility === 'private') {
+      return account.ownerId === userId;
+    }
+
+    if (account.visibility === 'ledger') {
+      return true;
+    }
+
+    return false;
   }
 
   private async findActiveMember(userId: string, ledgerId: string): Promise<ActiveMember | null> {
