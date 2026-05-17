@@ -1,0 +1,89 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Nunito:wght@700;800;900&display=swap');
+@import "tailwindcss";
+
+:root {
+  --clay-canvas: #f4f1fa;
+  --clay-surface: rgba(255, 255, 255, 0.72);
+  --clay-surface-strong: rgba(255, 255, 255, 0.88);
+  --clay-pressed: #efebf5;
+  --clay-foreground: #332f3a;
+  --clay-muted: #635f69;
+  --clay-violet: #7c3aed;
+  --clay-violet-soft: #a78bfa;
+  --clay-pink: #db2777;
+  --clay-blue: #0ea5e9;
+  --clay-green: #10b981;
+  --clay-amber: #f59e0b;
+  --clay-shadow-card:
+    16px 16px 32px rgba(160, 150, 180, 0.22),
+    -10px -10px 24px rgba(255, 255, 255, 0.92),
+    inset 6px 6px 12px rgba(139, 92, 246, 0.04),
+    inset -6px -6px 12px rgba(255, 255, 255, 0.96);
+  --clay-shadow-button:
+    12px 12px 24px rgba(139, 92, 246, 0.28),
+    -8px -8px 16px rgba(255, 255, 255, 0.45),
+    inset 4px 4px 8px rgba(255, 255, 255, 0.42),
+    inset -4px -4px 8px rgba(0, 0, 0, 0.1);
+  --clay-shadow-pressed:
+    inset 10px 10px 20px #d9d4e3,
+    inset -10px -10px 20px #ffffff;
+
+  color: var(--clay-foreground);
+  background: var(--clay-canvas);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 16px;
+  font-synthesis: none;
+  letter-spacing: 0;
+  line-height: 1.5;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  min-width: 320px;
+  min-height: 100vh;
+  margin: 0;
+  overflow-x: hidden;
+}
+
+button {
+  font: inherit;
+}
+
+#app {
+  min-height: 100vh;
+}
+
+@keyframes clay-float {
+  0%,
+  100% {
+    transform: translateY(0) rotate(0deg);
+  }
+
+  50% {
+    transform: translateY(-18px) rotate(2deg);
+  }
+}
+
+@keyframes clay-breathe {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+
+  50% {
+    transform: scale(1.025);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}
