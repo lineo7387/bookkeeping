@@ -1,8 +1,12 @@
 # AI 服务设计
 
+详细模块规范见 `docs/modules/ai-service/AI服务规范.md`。本文只描述架构层概要。
+
 ## 服务定位
 
 AI 服务只返回候选结果，不直接写入正式交易流水。
+
+FastAPI 是 internal-only 服务，只允许 NestJS 或受控后台任务调用；前端、移动端和后台 Web 都只能调用 NestJS。
 
 ## 标准流程
 

@@ -22,29 +22,51 @@ Codex 不应：
 
 ## 推荐创建顺序
 
-第一批：
+已完成：
+
+- 根目录 pnpm workspace 已初始化。
+- `apps/api` 已创建，当前为 NestJS 11 + Prisma 7。
+- `apps/admin-web` 已创建，当前为 Vue 3 + TypeScript + Vite + Tailwind CSS。
+- `packages/shared-types` 已创建，当前提供跨端共享类型和 AI 候选结果基础类型。
+- `packages/api-client` 已创建，当前只封装前端访问 NestJS API 的请求能力。
+
+剩余应用脚手架：
+
+第一步：确认当前分支和远端推送策略。Codex 不应在用户未批准时执行 push，只能提示用户确认后再操作。
 
 ```bash
-pnpm create nest apps/api
+git status --short --branch
+git log --oneline -8
+git remote -v
 ```
 
-第二批：
+第二步：创建 FastAPI AI 服务。命令由用户执行；Codex 在用户执行后检查并补配置。
 
 ```bash
-pnpm create vite apps/admin-web --template vue-ts
+mkdir -p apps/ai-service/app
+cd apps/ai-service
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install --upgrade pip
+python -m pip install fastapi "uvicorn[standard]" pydantic pydantic-settings httpx pytest
+python -m pip freeze > requirements.txt
 ```
 
-第三批：
+如果用户希望使用 `uv`、Poetry、Rye 或其他 Python 项目工具，应先确认工具方案和命令，再执行。
+
+第三步：创建 uni-app 移动端。命令由用户执行；Codex 在用户执行后检查并补配置。
 
 ```bash
-# uni-app 创建命令需根据当前 HBuilderX/CLI 方案确认后再执行
+# uni-app 创建命令需根据用户选择的 HBuilderX/CLI 方案确认后再执行
+# 目标目录：apps/mobile
+# 技术方向：uni-app + Vue 3 + TypeScript
 ```
 
-第四批：
+第四步：后续再评估共享配置包和校验包。
 
 ```bash
-# FastAPI 服务可以由 Codex 在 apps/ai-service 中补最小结构
-# 如果用户希望使用特定 Python 项目工具，再按该工具创建
+# packages/validation 与 packages/config 暂不在 M0 强行创建
+# 等多个端出现重复校验或重复配置后再拆分
 ```
 
 ## 每次创建后的检查
@@ -57,3 +79,11 @@ pnpm create vite apps/admin-web --template vue-ts
 - lint、format、test 命令是否可统一调用。
 - 是否需要删除模板示例代码。
 - 是否需要补中文 README 或模块说明。
+
+## 边界提醒
+
+- 前端应用、后台 Web 和移动端只能调用 NestJS 对外 API，不能直接调用 FastAPI。
+- FastAPI AI 服务只返回候选结果，不创建正式流水。
+- AI 候选结果必须由 NestJS 保存，用户确认后才创建正式 `transaction`。
+- `@bookkeeping/api-client` 只能封装 NestJS API，不能暴露 FastAPI 内部地址。
+- 后续详细步骤见 `docs/handover/后续脚手架计划.md`。

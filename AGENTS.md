@@ -30,7 +30,9 @@
 - 已创建 `apps/admin-web`：Vue 3、TypeScript、Vite、Tailwind CSS、lucide-vue-next。
 - 后台首页位于 `apps/admin-web/src/views/DashboardView.vue`。
 - 后台 Web 当前使用静态数据，尚未接入真实 API。
-- 尚未创建 `apps/ai-service`、`apps/mobile`、`packages/shared-types`、`packages/api-client`。
+- 已创建 `packages/shared-types`：共享 API 响应、账本权限、AI 候选结果等基础类型。
+- 已创建 `packages/api-client`：面向 NestJS 对外 API 的轻量请求客户端。
+- 尚未创建 `apps/ai-service`、`apps/mobile`。
 
 ## 协作规则
 
@@ -60,6 +62,12 @@
 4. 对应功能的中文模块文档
 
 如果对应功能文档不存在，应先创建文档，再实现代码。
+
+## 推荐技能
+
+- 修改 `apps/api`、NestJS 模块、Controller、Service、Guard、Policy、Prisma 访问层或后端测试前，优先使用 `nestjs-best-practices`。
+- 修改或创建 `apps/ai-service`、FastAPI 路由、Pydantic 模型、内部 AI 契约或 Python 测试前，优先使用 `fastapi`。
+- 技能只能补充框架最佳实践，不能覆盖本项目规则：前端只调用 NestJS、FastAPI 只生成候选结果、用户确认后才创建正式流水、所有交易归属于 `ledger`。
 
 ## 新对话建议
 

@@ -29,6 +29,7 @@
 ## 后端规则
 
 - NestJS 采用模块化单体。
+- 修改 NestJS 代码前优先使用 `nestjs-best-practices`，但不得覆盖本项目 Controller、Service、Policy 和 Prisma 分层规则。
 - Controller 只负责 HTTP 入参和响应。
 - Service 负责业务流程。
 - Prisma 层负责数据访问。
@@ -36,6 +37,7 @@
 - 时间统一存 UTC，账本保存 timezone。
 - 重要删除优先软删除。
 - 敏感操作写入审计日志。
+- 修改 FastAPI AI 服务前优先使用 `fastapi`，但 FastAPI 仍只能作为 internal-only 服务返回候选结果，不承担认证、权限、正式流水创建或主业务状态。
 
 ## 提交规则
 

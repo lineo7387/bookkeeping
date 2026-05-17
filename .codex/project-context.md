@@ -51,3 +51,9 @@ packages/
 ## 视觉系统
 
 根目录 `designer.md` 是前端视觉系统基准，风格为 High-Fidelity Claymorphism。后台 Web 可以适当克制装饰密度，用户端应更完整表达圆润、柔软、轻量动效和高触感风格。
+
+## 推荐技能
+
+- NestJS 后端开发、审查和重构优先使用 `nestjs-best-practices`，用于模块边界、依赖注入、Guard/Policy、安全和测试惯例。
+- FastAPI AI 服务开发、审查和重构优先使用 `fastapi`，用于路由、Pydantic、依赖声明、错误处理和测试惯例。
+- 以上技能只作为框架实践辅助；项目边界仍以 `AGENTS.md`、`.codex/development-rules.md` 和中文模块文档为准。
