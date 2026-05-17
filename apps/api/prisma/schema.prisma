@@ -231,7 +231,7 @@ model Transaction {
   visibility ResourceVisibility @default(ledger)
   createdBy  String             @map("created_by")
   source     TransactionSource  @default(manual)
-  metadata   Json               @default("{}") @db.JsonB
+  metadata   Json?              @db.JsonB
   createdAt  DateTime           @default(now()) @map("created_at")
   updatedAt  DateTime           @updatedAt @map("updated_at")
   deletedAt  DateTime?          @map("deleted_at")
