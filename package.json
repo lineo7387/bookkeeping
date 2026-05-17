@@ -1,0 +1,24 @@
+{
+  "name": "bookkeeping",
+  "version": "1.0.0",
+  "description": "Personal and family shared intelligent bookkeeping platform.",
+  "private": true,
+  "scripts": {
+    "build": "pnpm -r --if-present build",
+    "dev": "pnpm -r --parallel --if-present dev",
+    "lint": "pnpm -r --if-present lint",
+    "format": "pnpm -r --if-present format",
+    "test": "pnpm -r --if-present test",
+    "typecheck": "pnpm -r --if-present typecheck"
+  },
+  "keywords": [
+    "bookkeeping",
+    "nestjs",
+    "fastapi",
+    "vue",
+    "uni-app"
+  ],
+  "author": "lineo7387",
+  "license": "UNLICENSED",
+  "packageManager": "pnpm@10.33.0"
+}
