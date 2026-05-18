@@ -63,6 +63,17 @@ type CategoryRecord = {
   updatedAt: Date;
 };
 
+type TransactionClient = {
+  transaction: {
+    create(args: Prisma.TransactionCreateArgs): Promise<TransactionRecord>;
+    updateMany(args: Prisma.TransactionUpdateManyArgs): Promise<Prisma.BatchPayload>;
+    findFirst(args: Prisma.TransactionFindFirstArgs): Promise<TransactionRecord | null>;
+  };
+  account: {
+    updateMany(args: Prisma.AccountUpdateManyArgs): Promise<Prisma.BatchPayload>;
+  };
+};
+
 export type TransferMetadata = { transferTargetAccountId: string };
 
 export interface TransactionCreateData {
@@ -155,8 +166,29 @@ export class TransactionsRepository {
     data: TransactionCreateData,
     balanceChanges: AccountBalanceChange[],
   ): Promise<TransactionSummary> {
-    void balanceChanges;
-    return this.create(data);
+    const transaction = await this.prisma.$transaction(async (tx) => {
+      const created = await tx.transaction.create({
+        data: {
+          ledgerId: data.ledgerId,
+          accountId: data.accountId,
+          categoryId: data.categoryId,
+          type: data.type,
+          amount: data.amount,
+          currency: data.currency,
+          occurredAt: data.occurredAt,
+          merchant: data.merchant,
+          note: data.note,
+          visibility: data.visibility,
+          createdBy: data.createdBy,
+          source: data.source,
+          metadata: toPrismaJson(data.metadata),
+        },
+      });
+      await applyBalanceChanges(tx, balanceChanges);
+      return created;
+    });
+
+    return toTransactionSummary(transaction);
   }
 
   async findActiveById(transactionId: string): Promise<TransactionSummary | null> {
@@ -193,25 +225,12 @@ export class TransactionsRepository {
   }
 
   async update(transactionId: string, data: TransactionUpdateData): Promise<TransactionSummary | null> {
-    const updateData: Prisma.TransactionUncheckedUpdateManyInput = {
-      accountId: data.accountId,
-      categoryId: data.categoryId,
-      type: data.type,
-      amount: data.amount,
-      currency: data.currency,
-      occurredAt: data.occurredAt,
-      merchant: data.merchant,
-      note: data.note,
-      visibility: data.visibility,
-      metadata: data.metadata === undefined ? undefined : toPrismaJson(data.metadata),
-    };
-
     const result = await this.prisma.transaction.updateMany({
       where: {
         id: transactionId,
         deletedAt: null,
       },
-      data: updateData,
+      data: toTransactionUpdateInput(data),
     });
 
     if (result.count === 0) {
@@ -226,8 +245,29 @@ export class TransactionsRepository {
     data: TransactionUpdateData,
     balanceChanges: AccountBalanceChange[],
   ): Promise<TransactionSummary | null> {
-    void balanceChanges;
-    return this.update(transactionId, data);
+    return this.prisma.$transaction(async (tx) => {
+      await applyBalanceChanges(tx, balanceChanges);
+      const result = await tx.transaction.updateMany({
+        where: {
+          id: transactionId,
+          deletedAt: null,
+        },
+        data: toTransactionUpdateInput(data),
+      });
+
+      if (result.count === 0) {
+        return null;
+      }
+
+      const transaction = await tx.transaction.findFirst({
+        where: {
+          id: transactionId,
+          deletedAt: null,
+        },
+      });
+
+      return transaction ? toTransactionSummary(transaction) : null;
+    });
   }
 
   async softDelete(transactionId: string, deletedAt: Date): Promise<{ deleted: true } | null> {
@@ -251,8 +291,18 @@ export class TransactionsRepository {
     deletedAt: Date,
     balanceChanges: AccountBalanceChange[],
   ): Promise<{ deleted: true } | null> {
-    void balanceChanges;
-    return this.softDelete(transactionId, deletedAt);
+    return this.prisma.$transaction(async (tx) => {
+      await applyBalanceChanges(tx, balanceChanges);
+      const result = await tx.transaction.updateMany({
+        where: {
+          id: transactionId,
+          deletedAt: null,
+        },
+        data: { deletedAt },
+      });
+
+      return result.count === 0 ? null : { deleted: true };
+    });
   }
 }
 
@@ -325,4 +375,35 @@ function toPrismaJson(metadata: TransferMetadata | null | undefined): Prisma.Inp
     return Prisma.JsonNull;
   }
   return metadata;
+}
+
+function toTransactionUpdateInput(data: TransactionUpdateData): Prisma.TransactionUncheckedUpdateManyInput {
+  return {
+    accountId: data.accountId,
+    categoryId: data.categoryId,
+    type: data.type,
+    amount: data.amount,
+    currency: data.currency,
+    occurredAt: data.occurredAt,
+    merchant: data.merchant,
+    note: data.note,
+    visibility: data.visibility,
+    metadata: data.metadata === undefined ? undefined : toPrismaJson(data.metadata),
+  };
+}
+
+async function applyBalanceChanges(tx: TransactionClient, changes: AccountBalanceChange[]): Promise<void> {
+  for (const change of changes) {
+    await tx.account.updateMany({
+      where: {
+        id: change.accountId,
+        archivedAt: null,
+      },
+      data: {
+        currentBalance: {
+          increment: change.delta,
+        },
+      },
+    });
+  }
 }
