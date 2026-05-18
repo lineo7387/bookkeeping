@@ -9,12 +9,12 @@ describe('TransactionsService', () => {
     Pick<
       TransactionsRepository,
       | 'listVisibleForUser'
-      | 'create'
+      | 'createWithBalanceChanges'
       | 'findActiveById'
       | 'findActiveAccountById'
       | 'findActiveCategoryById'
-      | 'update'
-      | 'softDelete'
+      | 'updateWithBalanceChanges'
+      | 'softDeleteWithBalanceChanges'
     >
   >;
   let policy: jest.Mocked<
@@ -76,12 +76,12 @@ describe('TransactionsService', () => {
   beforeEach(() => {
     repository = {
       listVisibleForUser: jest.fn(),
-      create: jest.fn(),
+      createWithBalanceChanges: jest.fn(),
       findActiveById: jest.fn(),
       findActiveAccountById: jest.fn(),
       findActiveCategoryById: jest.fn(),
-      update: jest.fn(),
-      softDelete: jest.fn(),
+      updateWithBalanceChanges: jest.fn(),
+      softDeleteWithBalanceChanges: jest.fn(),
     };
     policy = {
       canViewLedger: jest.fn(),
@@ -144,7 +144,7 @@ describe('TransactionsService', () => {
       response: { success: false, error: { code: 'MEMBER_ROLE_DENIED' } },
     });
     expect(policy.canViewAccount).not.toHaveBeenCalled();
-    expect(repository.create).not.toHaveBeenCalled();
+    expect(repository.createWithBalanceChanges).not.toHaveBeenCalled();
   });
 
   it('validates account visibility through canViewAccount before fetching account details', async () => {
@@ -165,7 +165,7 @@ describe('TransactionsService', () => {
     });
     expect(policy.canViewAccount).toHaveBeenCalledWith('user_1', 'account_1');
     expect(repository.findActiveAccountById).not.toHaveBeenCalled();
-    expect(repository.create).not.toHaveBeenCalled();
+    expect(repository.createWithBalanceChanges).not.toHaveBeenCalled();
   });
 
   it('forces private transaction visibility when the source account is private', async () => {
@@ -174,7 +174,7 @@ describe('TransactionsService', () => {
     policy.canViewAccount.mockResolvedValue(true);
     repository.findActiveAccountById.mockResolvedValue(privateAccount);
     repository.findActiveCategoryById.mockResolvedValue(expenseCategory);
-    repository.create.mockResolvedValue({ ...transaction, visibility: 'private' });
+    repository.createWithBalanceChanges.mockResolvedValue({ ...transaction, visibility: 'private' });
 
     await expect(
       service.createTransaction('user_1', 'ledger_1', {
@@ -187,13 +187,43 @@ describe('TransactionsService', () => {
       }),
     ).resolves.toMatchObject({ visibility: 'private' });
 
-    expect(repository.create).toHaveBeenCalledWith(
+    expect(repository.createWithBalanceChanges).toHaveBeenCalledWith(
       expect.objectContaining({
         ledgerId: 'ledger_1',
         createdBy: 'user_1',
         source: 'manual',
         visibility: 'private',
       }),
+      [{ accountId: 'account_1', delta: '-86.00' }],
+    );
+  });
+
+  it('increments source account balance when creating income', async () => {
+    const incomeCategory: CategorySummary = {
+      ...expenseCategory,
+      id: 'category_income',
+      type: 'income',
+      name: '工资',
+    };
+    policy.canCreateTransaction.mockResolvedValue(true);
+    policy.canViewAccount.mockResolvedValue(true);
+    repository.findActiveAccountById.mockResolvedValue(account);
+    repository.findActiveCategoryById.mockResolvedValue(incomeCategory);
+    repository.createWithBalanceChanges.mockResolvedValue({ ...transaction, type: 'income', amount: '5000.00' });
+
+    await expect(
+      service.createTransaction('user_1', 'ledger_1', {
+        type: 'income',
+        amount: '5000.00',
+        occurredAt: '2026-05-18T10:00:00.000Z',
+        accountId: 'account_1',
+        categoryId: 'category_income',
+      }),
+    ).resolves.toMatchObject({ type: 'income', amount: '5000.00' });
+
+    expect(repository.createWithBalanceChanges).toHaveBeenCalledWith(
+      expect.objectContaining({ type: 'income', amount: '5000.00' }),
+      [{ accountId: 'account_1', delta: '5000.00' }],
     );
   });
 
@@ -215,7 +245,7 @@ describe('TransactionsService', () => {
       constructor: BadRequestException,
       response: { success: false, error: { code: 'VALIDATION_FAILED' } },
     });
-    expect(repository.create).not.toHaveBeenCalled();
+    expect(repository.createWithBalanceChanges).not.toHaveBeenCalled();
   });
 
   it('stores transfer target account data in metadata after target visibility validation', async () => {
@@ -226,7 +256,7 @@ describe('TransactionsService', () => {
       id: 'account_2',
       name: '银行卡',
     });
-    repository.create.mockResolvedValue({
+    repository.createWithBalanceChanges.mockResolvedValue({
       ...transaction,
       type: 'transfer',
       categoryId: null,
@@ -249,13 +279,72 @@ describe('TransactionsService', () => {
 
     expect(policy.canViewAccount).toHaveBeenCalledWith('user_1', 'account_1');
     expect(policy.canViewAccount).toHaveBeenCalledWith('user_1', 'account_2');
-    expect(repository.create).toHaveBeenCalledWith(
+    expect(repository.createWithBalanceChanges).toHaveBeenCalledWith(
       expect.objectContaining({
         type: 'transfer',
         categoryId: null,
         metadata: { transferTargetAccountId: 'account_2' },
       }),
+      [
+        { accountId: 'account_1', delta: '-100.00' },
+        { accountId: 'account_2', delta: '100.00' },
+      ],
     );
+  });
+
+  it('moves balance between source and target accounts when creating transfer', async () => {
+    policy.canCreateTransaction.mockResolvedValue(true);
+    policy.canViewAccount.mockResolvedValue(true);
+    repository.findActiveAccountById.mockResolvedValueOnce(account).mockResolvedValueOnce({
+      ...account,
+      id: 'account_2',
+      name: '银行卡',
+    });
+    repository.createWithBalanceChanges.mockResolvedValue({
+      ...transaction,
+      type: 'transfer',
+      categoryId: null,
+      metadata: { transferTargetAccountId: 'account_2' },
+    });
+
+    await service.createTransaction('user_1', 'ledger_1', {
+      type: 'transfer',
+      amount: '100.00',
+      occurredAt: '2026-05-18T10:00:00.000Z',
+      accountId: 'account_1',
+      transferTargetAccountId: 'account_2',
+    });
+
+    expect(repository.createWithBalanceChanges).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: 'transfer',
+        metadata: { transferTargetAccountId: 'account_2' },
+      }),
+      [
+        { accountId: 'account_1', delta: '-100.00' },
+        { accountId: 'account_2', delta: '100.00' },
+      ],
+    );
+  });
+
+  it('rejects creating a transfer to the same account', async () => {
+    policy.canCreateTransaction.mockResolvedValue(true);
+    policy.canViewAccount.mockResolvedValue(true);
+    repository.findActiveAccountById.mockResolvedValueOnce(account).mockResolvedValueOnce(account);
+
+    await expect(
+      service.createTransaction('user_1', 'ledger_1', {
+        type: 'transfer',
+        amount: '100.00',
+        occurredAt: '2026-05-18T10:00:00.000Z',
+        accountId: 'account_1',
+        transferTargetAccountId: 'account_1',
+      }),
+    ).rejects.toMatchObject({
+      constructor: BadRequestException,
+      response: { success: false, error: { code: 'VALIDATION_FAILED' } },
+    });
+    expect(repository.createWithBalanceChanges).not.toHaveBeenCalled();
   });
 
   it('rejects creating a transfer without transferTargetAccountId', async () => {
@@ -274,7 +363,7 @@ describe('TransactionsService', () => {
       constructor: BadRequestException,
       response: { success: false, error: { code: 'VALIDATION_FAILED' } },
     });
-    expect(repository.create).not.toHaveBeenCalled();
+    expect(repository.createWithBalanceChanges).not.toHaveBeenCalled();
   });
 
   it('requires canViewTransaction before fetching a transaction by id', async () => {
@@ -302,14 +391,66 @@ describe('TransactionsService', () => {
     repository.findActiveById.mockResolvedValue(transaction);
     repository.findActiveAccountById.mockResolvedValue(account);
     repository.findActiveCategoryById.mockResolvedValue(expenseCategory);
-    repository.update.mockResolvedValue({ ...transaction, merchant: '便利店' });
+    repository.updateWithBalanceChanges.mockResolvedValue({ ...transaction, merchant: '便利店' });
 
     await expect(service.updateTransaction('user_1', 'transaction_1', { merchant: '便利店' })).resolves.toMatchObject({
       merchant: '便利店',
     });
 
     expect(policy.canUpdateTransaction).toHaveBeenCalledWith('user_1', 'transaction_1');
-    expect(repository.update).toHaveBeenCalledWith('transaction_1', expect.objectContaining({ merchant: '便利店' }));
+    expect(repository.updateWithBalanceChanges).toHaveBeenCalledWith(
+      'transaction_1',
+      expect.objectContaining({ merchant: '便利店' }),
+      [],
+    );
+  });
+
+  it('reverses old balance effect and applies new effect when updating amount', async () => {
+    policy.canUpdateTransaction.mockResolvedValue(true);
+    repository.findActiveById.mockResolvedValue(transaction);
+    repository.updateWithBalanceChanges.mockResolvedValue({ ...transaction, amount: '120.00' });
+
+    await service.updateTransaction('user_1', 'transaction_1', { amount: '120.00' });
+
+    expect(repository.updateWithBalanceChanges).toHaveBeenCalledWith(
+      'transaction_1',
+      expect.objectContaining({ amount: '120.00' }),
+      [
+        { accountId: 'account_1', delta: '86.00' },
+        { accountId: 'account_1', delta: '-120.00' },
+      ],
+    );
+  });
+
+  it('reverses old expense and applies new income when updating type', async () => {
+    const incomeCategory: CategorySummary = {
+      ...expenseCategory,
+      id: 'category_income',
+      type: 'income',
+      name: '退款',
+    };
+    policy.canUpdateTransaction.mockResolvedValue(true);
+    repository.findActiveById.mockResolvedValue(transaction);
+    repository.findActiveCategoryById.mockResolvedValue(incomeCategory);
+    repository.updateWithBalanceChanges.mockResolvedValue({
+      ...transaction,
+      type: 'income',
+      categoryId: 'category_income',
+    });
+
+    await service.updateTransaction('user_1', 'transaction_1', {
+      type: 'income',
+      categoryId: 'category_income',
+    });
+
+    expect(repository.updateWithBalanceChanges).toHaveBeenCalledWith(
+      'transaction_1',
+      expect.objectContaining({ type: 'income', categoryId: 'category_income' }),
+      [
+        { accountId: 'account_1', delta: '86.00' },
+        { accountId: 'account_1', delta: '86.00' },
+      ],
+    );
   });
 
   it('rejects updating a non-transfer to transfer without transferTargetAccountId', async () => {
@@ -320,7 +461,7 @@ describe('TransactionsService', () => {
       constructor: BadRequestException,
       response: { success: false, error: { code: 'VALIDATION_FAILED' } },
     });
-    expect(repository.update).not.toHaveBeenCalled();
+    expect(repository.updateWithBalanceChanges).not.toHaveBeenCalled();
   });
 
   it('forces private visibility when updating only visibility on an existing transfer with a private target account', async () => {
@@ -337,7 +478,7 @@ describe('TransactionsService', () => {
     repository.findActiveAccountById
       .mockResolvedValueOnce(account)
       .mockResolvedValueOnce({ ...account, id: 'account_2', visibility: 'private' });
-    repository.update.mockResolvedValue({ ...transferTransaction, visibility: 'private' });
+    repository.updateWithBalanceChanges.mockResolvedValue({ ...transferTransaction, visibility: 'private' });
 
     await expect(service.updateTransaction('user_1', 'transaction_1', { visibility: 'ledger' })).resolves.toMatchObject({
       visibility: 'private',
@@ -345,12 +486,13 @@ describe('TransactionsService', () => {
 
     expect(policy.canViewAccount).toHaveBeenCalledWith('user_1', 'account_1');
     expect(policy.canViewAccount).toHaveBeenCalledWith('user_1', 'account_2');
-    expect(repository.update).toHaveBeenCalledWith(
+    expect(repository.updateWithBalanceChanges).toHaveBeenCalledWith(
       'transaction_1',
       expect.objectContaining({
         visibility: 'private',
         metadata: { transferTargetAccountId: 'account_2' },
       }),
+      [],
     );
   });
 
@@ -374,7 +516,7 @@ describe('TransactionsService', () => {
       }
       return null;
     });
-    repository.update.mockResolvedValue({ ...transferTransaction, visibility: 'private' });
+    repository.updateWithBalanceChanges.mockResolvedValue({ ...transferTransaction, visibility: 'private' });
 
     await expect(service.updateTransaction('user_1', 'transaction_1', { type: 'transfer' })).resolves.toMatchObject({
       visibility: 'private',
@@ -382,13 +524,47 @@ describe('TransactionsService', () => {
 
     expect(policy.canViewAccount).toHaveBeenCalledWith('user_1', 'account_1');
     expect(policy.canViewAccount).toHaveBeenCalledWith('user_1', 'account_2');
-    expect(repository.update).toHaveBeenCalledWith(
+    expect(repository.updateWithBalanceChanges).toHaveBeenCalledWith(
       'transaction_1',
       expect.objectContaining({
         type: 'transfer',
         visibility: 'private',
         metadata: { transferTargetAccountId: 'account_2' },
       }),
+      [],
+    );
+  });
+
+  it('reverses old transfer and applies new transfer target when updating transfer target', async () => {
+    const transferTransaction: TransactionSummary = {
+      ...transaction,
+      type: 'transfer',
+      categoryId: null,
+      amount: '100.00',
+      metadata: { transferTargetAccountId: 'account_2' },
+    };
+    policy.canUpdateTransaction.mockResolvedValue(true);
+    policy.canViewAccount.mockResolvedValue(true);
+    repository.findActiveById.mockResolvedValue(transferTransaction);
+    repository.findActiveAccountById
+      .mockResolvedValueOnce(account)
+      .mockResolvedValueOnce({ ...account, id: 'account_3', name: '微信' });
+    repository.updateWithBalanceChanges.mockResolvedValue({
+      ...transferTransaction,
+      metadata: { transferTargetAccountId: 'account_3' },
+    });
+
+    await service.updateTransaction('user_1', 'transaction_1', { transferTargetAccountId: 'account_3' });
+
+    expect(repository.updateWithBalanceChanges).toHaveBeenCalledWith(
+      'transaction_1',
+      expect.objectContaining({ metadata: { transferTargetAccountId: 'account_3' } }),
+      [
+        { accountId: 'account_1', delta: '100.00' },
+        { accountId: 'account_2', delta: '-100.00' },
+        { accountId: 'account_1', delta: '-100.00' },
+        { accountId: 'account_3', delta: '100.00' },
+      ],
     );
   });
 
@@ -402,7 +578,7 @@ describe('TransactionsService', () => {
       constructor: BadRequestException,
       response: { success: false, error: { code: 'VALIDATION_FAILED' } },
     });
-    expect(repository.update).not.toHaveBeenCalled();
+    expect(repository.updateWithBalanceChanges).not.toHaveBeenCalled();
   });
 
   it('clears transfer metadata when updating a transfer to an expense', async () => {
@@ -415,7 +591,7 @@ describe('TransactionsService', () => {
     policy.canUpdateTransaction.mockResolvedValue(true);
     repository.findActiveById.mockResolvedValue(transferTransaction);
     repository.findActiveCategoryById.mockResolvedValue(expenseCategory);
-    repository.update.mockResolvedValue({
+    repository.updateWithBalanceChanges.mockResolvedValue({
       ...transaction,
       type: 'expense',
       categoryId: 'category_1',
@@ -430,13 +606,18 @@ describe('TransactionsService', () => {
       metadata: null,
     });
 
-    expect(repository.update).toHaveBeenCalledWith(
+    expect(repository.updateWithBalanceChanges).toHaveBeenCalledWith(
       'transaction_1',
       expect.objectContaining({
         type: 'expense',
         categoryId: 'category_1',
         metadata: null,
       }),
+      [
+        { accountId: 'account_1', delta: '86.00' },
+        { accountId: 'account_2', delta: '-86.00' },
+        { accountId: 'account_1', delta: '-86.00' },
+      ],
     );
   });
 
@@ -448,17 +629,21 @@ describe('TransactionsService', () => {
       response: { success: false, error: { message: 'Transaction not found' } },
     });
     expect(repository.findActiveById).not.toHaveBeenCalled();
-    expect(repository.update).not.toHaveBeenCalled();
+    expect(repository.updateWithBalanceChanges).not.toHaveBeenCalled();
   });
 
-  it('soft deletes a transaction by setting deletedAt', async () => {
+  it('soft deletes a transaction and reverses its balance effect', async () => {
     policy.canUpdateTransaction.mockResolvedValue(true);
-    repository.softDelete.mockResolvedValue({ deleted: true });
+    repository.findActiveById.mockResolvedValue(transaction);
+    repository.softDeleteWithBalanceChanges.mockResolvedValue({ deleted: true });
 
     await expect(service.deleteTransaction('user_1', 'transaction_1')).resolves.toEqual({ deleted: true });
 
     expect(policy.canUpdateTransaction).toHaveBeenCalledWith('user_1', 'transaction_1');
-    expect(repository.softDelete).toHaveBeenCalledWith('transaction_1', expect.any(Date));
+    expect(repository.findActiveById).toHaveBeenCalledWith('transaction_1');
+    expect(repository.softDeleteWithBalanceChanges).toHaveBeenCalledWith('transaction_1', expect.any(Date), [
+      { accountId: 'account_1', delta: '86.00' },
+    ]);
   });
 
   it('uses non-leaky not found behavior when delete policy denies access', async () => {
@@ -468,6 +653,6 @@ describe('TransactionsService', () => {
       constructor: NotFoundException,
       response: { success: false, error: { message: 'Transaction not found' } },
     });
-    expect(repository.softDelete).not.toHaveBeenCalled();
+    expect(repository.softDeleteWithBalanceChanges).not.toHaveBeenCalled();
   });
 });

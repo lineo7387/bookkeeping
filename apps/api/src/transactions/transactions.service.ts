@@ -51,7 +51,7 @@ export class TransactionsService {
     }
 
     const categoryId = await this.resolveCategoryId(ledgerId, dto.type, dto.categoryId);
-    const metadata = await this.resolveTransferMetadata(userId, ledgerId, dto.type, dto.transferTargetAccountId);
+    const metadata = await this.resolveTransferMetadata(userId, ledgerId, dto.type, dto.transferTargetAccountId, account.id);
     if (metadata?.targetAccount.visibility === 'private') {
       finalVisibility = 'private';
     }
@@ -72,7 +72,15 @@ export class TransactionsService {
       metadata: metadata?.value ?? null,
     };
 
-    return this.transactionsRepository.create(createData);
+    return this.transactionsRepository.createWithBalanceChanges(
+      createData,
+      buildBalanceChanges({
+        accountId: createData.accountId,
+        type: createData.type,
+        amount: createData.amount,
+        transferTargetAccountId: metadata?.value.transferTargetAccountId,
+      }),
+    );
   }
 
   async getTransaction(userId: string, transactionId: string): Promise<TransactionSummary> {
@@ -134,6 +142,7 @@ export class TransactionsService {
           transaction.ledgerId,
           nextType,
           dto.transferTargetAccountId,
+          dto.accountId ?? transaction.accountId,
           transaction.metadata,
         )
       : null;
@@ -154,8 +163,9 @@ export class TransactionsService {
       visibility: finalVisibility,
       metadata: metadataUpdate,
     };
+    const balanceChanges = buildUpdateBalanceChanges(transaction, updateData, metadataUpdate);
 
-    const updated = await this.transactionsRepository.update(transactionId, updateData);
+    const updated = await this.transactionsRepository.updateWithBalanceChanges(transactionId, updateData, balanceChanges);
     if (!updated) {
       throw transactionNotFound();
     }
@@ -165,7 +175,12 @@ export class TransactionsService {
 
   async deleteTransaction(userId: string, transactionId: string): Promise<{ deleted: true }> {
     await this.requireUpdateTransaction(userId, transactionId);
-    const deleted = await this.transactionsRepository.softDelete(transactionId, new Date());
+    const transaction = await this.getActiveTransaction(transactionId);
+    const deleted = await this.transactionsRepository.softDeleteWithBalanceChanges(
+      transactionId,
+      new Date(),
+      invertBalanceChanges(buildBalanceChanges(transactionToBalanceEffect(transaction))),
+    );
     if (!deleted) {
       throw transactionNotFound();
     }
@@ -228,6 +243,7 @@ export class TransactionsService {
     ledgerId: string,
     type: TransactionType,
     transferTargetAccountId?: string,
+    transferSourceAccountId?: string,
     existingMetadata?: Record<string, unknown> | null,
   ): Promise<{ value: TransferMetadata; targetAccount: AccountSummary } | null> {
     if (type !== 'transfer') {
@@ -245,6 +261,9 @@ export class TransactionsService {
     const targetAccount = await this.getVisibleActiveAccount(userId, targetAccountId);
     if (targetAccount.ledgerId !== ledgerId) {
       throw validationFailed('Transfer target account is invalid');
+    }
+    if (targetAccount.id === transferSourceAccountId) {
+      throw validationFailed('Transfer target account must be different from source account');
     }
 
     return {
@@ -312,4 +331,80 @@ function resolveMetadataUpdate(
     return transferMetadata;
   }
   return previousType === 'transfer' && nextType !== 'transfer' ? null : undefined;
+}
+
+function transactionToBalanceEffect(transaction: TransactionSummary): BalanceEffect {
+  return {
+    accountId: transaction.accountId,
+    type: transaction.type,
+    amount: transaction.amount,
+    transferTargetAccountId: getExistingTransferTargetAccountId(transaction.metadata),
+  };
+}
+
+function buildUpdateBalanceChanges(
+  transaction: TransactionSummary,
+  data: TransactionUpdateData,
+  metadataUpdate: TransferMetadata | null | undefined,
+): AccountBalanceChange[] {
+  const oldEffect = transactionToBalanceEffect(transaction);
+  const nextEffect: BalanceEffect = {
+    accountId: data.accountId ?? transaction.accountId,
+    type: data.type ?? transaction.type,
+    amount: data.amount ?? transaction.amount,
+    transferTargetAccountId:
+      metadataUpdate?.transferTargetAccountId ?? getExistingTransferTargetAccountId(transaction.metadata),
+  };
+  if (isSameBalanceEffect(oldEffect, nextEffect)) {
+    return [];
+  }
+  return [...invertBalanceChanges(buildBalanceChanges(oldEffect)), ...buildBalanceChanges(nextEffect)];
+}
+
+function isSameBalanceEffect(left: BalanceEffect, right: BalanceEffect): boolean {
+  return (
+    left.accountId === right.accountId &&
+    left.type === right.type &&
+    left.amount === right.amount &&
+    left.transferTargetAccountId === right.transferTargetAccountId
+  );
+}
+
+type BalanceEffect = {
+  accountId: string;
+  type: TransactionType;
+  amount: string;
+  transferTargetAccountId?: string;
+};
+
+type AccountBalanceChange = {
+  accountId: string;
+  delta: string;
+};
+
+function buildBalanceChanges(effect: BalanceEffect): AccountBalanceChange[] {
+  if (effect.type === 'income') {
+    return [{ accountId: effect.accountId, delta: effect.amount }];
+  }
+  if (effect.type === 'expense') {
+    return [{ accountId: effect.accountId, delta: negateDecimalString(effect.amount) }];
+  }
+  if (!effect.transferTargetAccountId) {
+    return [];
+  }
+  return [
+    { accountId: effect.accountId, delta: negateDecimalString(effect.amount) },
+    { accountId: effect.transferTargetAccountId, delta: effect.amount },
+  ];
+}
+
+function negateDecimalString(value: string): string {
+  return value.startsWith('-') ? value.slice(1) : `-${value}`;
+}
+
+function invertBalanceChanges(changes: AccountBalanceChange[]): AccountBalanceChange[] {
+  return changes.map((change) => ({
+    accountId: change.accountId,
+    delta: negateDecimalString(change.delta),
+  }));
 }

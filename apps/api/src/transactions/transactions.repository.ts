@@ -94,6 +94,11 @@ export interface TransactionUpdateData {
   metadata?: TransferMetadata | null;
 }
 
+export interface AccountBalanceChange {
+  accountId: string;
+  delta: string;
+}
+
 @Injectable()
 export class TransactionsRepository {
   constructor(private readonly prisma: PrismaService) {}
@@ -144,6 +149,14 @@ export class TransactionsRepository {
     });
 
     return toTransactionSummary(transaction);
+  }
+
+  async createWithBalanceChanges(
+    data: TransactionCreateData,
+    balanceChanges: AccountBalanceChange[],
+  ): Promise<TransactionSummary> {
+    void balanceChanges;
+    return this.create(data);
   }
 
   async findActiveById(transactionId: string): Promise<TransactionSummary | null> {
@@ -208,6 +221,15 @@ export class TransactionsRepository {
     return this.findActiveById(transactionId);
   }
 
+  async updateWithBalanceChanges(
+    transactionId: string,
+    data: TransactionUpdateData,
+    balanceChanges: AccountBalanceChange[],
+  ): Promise<TransactionSummary | null> {
+    void balanceChanges;
+    return this.update(transactionId, data);
+  }
+
   async softDelete(transactionId: string, deletedAt: Date): Promise<{ deleted: true } | null> {
     const result = await this.prisma.transaction.updateMany({
       where: {
@@ -222,6 +244,15 @@ export class TransactionsRepository {
     }
 
     return { deleted: true };
+  }
+
+  async softDeleteWithBalanceChanges(
+    transactionId: string,
+    deletedAt: Date,
+    balanceChanges: AccountBalanceChange[],
+  ): Promise<{ deleted: true } | null> {
+    void balanceChanges;
+    return this.softDelete(transactionId, deletedAt);
   }
 }
 
