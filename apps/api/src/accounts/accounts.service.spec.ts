@@ -8,7 +8,7 @@ describe('AccountsService', () => {
   let repository: jest.Mocked<
     Pick<AccountsRepository, 'listVisibleForUser' | 'create' | 'findActiveById' | 'update' | 'archive'>
   >;
-  let policy: jest.Mocked<Pick<LedgerPolicyService, 'canViewLedger' | 'canManageLedger'>>;
+  let policy: jest.Mocked<Pick<LedgerPolicyService, 'canViewLedger' | 'canManageLedger' | 'canViewAccount'>>;
   let service: AccountsService;
 
   const accountSummary: AccountSummary = {
@@ -37,6 +37,7 @@ describe('AccountsService', () => {
     policy = {
       canViewLedger: jest.fn(),
       canManageLedger: jest.fn(),
+      canViewAccount: jest.fn(),
     };
     service = new AccountsService(
       repository as unknown as AccountsRepository,
@@ -106,6 +107,7 @@ describe('AccountsService', () => {
   });
 
   it('allows only the owner to update a private account', async () => {
+    policy.canViewAccount.mockResolvedValue(true);
     repository.findActiveById.mockResolvedValue({
       ...accountSummary,
       visibility: 'private',
@@ -120,12 +122,25 @@ describe('AccountsService', () => {
     expect(repository.update).not.toHaveBeenCalled();
   });
 
+  it('requires ledger management before updating a shared account', async () => {
+    policy.canManageLedger.mockResolvedValue(false);
+    repository.findActiveById.mockResolvedValue(accountSummary);
+
+    await expect(service.updateAccount('user_1', 'account_1', { name: '家庭现金' })).rejects.toMatchObject({
+      constructor: ForbiddenException,
+      response: { success: false, error: { code: 'MEMBER_ROLE_DENIED' } },
+    });
+    expect(policy.canManageLedger).toHaveBeenCalledWith('user_1', 'ledger_1');
+    expect(repository.update).not.toHaveBeenCalled();
+  });
+
   it('updates a private account when the current user owns it', async () => {
     const privateAccount = {
       ...accountSummary,
       visibility: 'private' as const,
       ownerId: 'user_1',
     };
+    policy.canViewAccount.mockResolvedValue(true);
     repository.findActiveById.mockResolvedValue(privateAccount);
     repository.update.mockResolvedValue({ ...privateAccount, name: '私密现金' });
 
@@ -134,6 +149,22 @@ describe('AccountsService', () => {
     });
 
     expect(repository.update).toHaveBeenCalledWith('account_1', { name: '私密现金' });
+  });
+
+  it('denies private account update when the owner is no longer allowed by account policy', async () => {
+    repository.findActiveById.mockResolvedValue({
+      ...accountSummary,
+      visibility: 'private',
+      ownerId: 'user_1',
+    });
+    policy.canViewAccount.mockResolvedValue(false);
+
+    await expect(service.updateAccount('user_1', 'account_1', { name: '私密现金' })).rejects.toMatchObject({
+      constructor: ForbiddenException,
+      response: { success: false, error: { code: 'PRIVATE_RESOURCE_DENIED' } },
+    });
+    expect(policy.canViewAccount).toHaveBeenCalledWith('user_1', 'account_1');
+    expect(repository.update).not.toHaveBeenCalled();
   });
 
   it('archives an account instead of removing it', async () => {
@@ -145,6 +176,37 @@ describe('AccountsService', () => {
 
     expect(policy.canManageLedger).toHaveBeenCalledWith('user_1', 'ledger_1');
     expect(repository.archive).toHaveBeenCalledWith('account_1');
+  });
+
+  it('allows only the owner to delete a private account', async () => {
+    policy.canViewAccount.mockResolvedValue(true);
+    repository.findActiveById.mockResolvedValue({
+      ...accountSummary,
+      visibility: 'private',
+      ownerId: 'user_2',
+    });
+
+    await expect(service.deleteAccount('user_1', 'account_1')).rejects.toMatchObject({
+      constructor: ForbiddenException,
+      response: { success: false, error: { code: 'PRIVATE_RESOURCE_DENIED' } },
+    });
+    expect(repository.archive).not.toHaveBeenCalled();
+  });
+
+  it('denies private account delete when the owner is no longer allowed by account policy', async () => {
+    repository.findActiveById.mockResolvedValue({
+      ...accountSummary,
+      visibility: 'private',
+      ownerId: 'user_1',
+    });
+    policy.canViewAccount.mockResolvedValue(false);
+
+    await expect(service.deleteAccount('user_1', 'account_1')).rejects.toMatchObject({
+      constructor: ForbiddenException,
+      response: { success: false, error: { code: 'PRIVATE_RESOURCE_DENIED' } },
+    });
+    expect(policy.canViewAccount).toHaveBeenCalledWith('user_1', 'account_1');
+    expect(repository.archive).not.toHaveBeenCalled();
   });
 
   it('raises account not found when updating an archived or missing account', async () => {

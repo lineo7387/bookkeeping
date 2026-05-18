@@ -65,6 +65,10 @@ export class AccountsService {
 
   private async requireAccountManage(userId: string, account: AccountSummary): Promise<void> {
     if (account.visibility === 'private') {
+      const visible = await this.ledgerPolicyService.canViewAccount(userId, account.id);
+      if (!visible) {
+        throw privateDenied();
+      }
       if (account.ownerId !== userId) {
         throw privateDenied();
       }
