@@ -74,4 +74,4 @@ git status --short --branch
 git log --oneline -8
 ```
 
-当前分支 `codex/m15-accounts-categories-transactions` 已完成 M1.5 并通过验证；优先方向是 review/合并 M1.5，随后继续 M2 的账户余额流水联动、基础统计、AI 编排或后续脚手架。
+`main` 已合入并推送 M1.5：账户、分类、流水基础闭环和分层 Agent 上下文已完成并通过验证。后续优先方向是 M2 的账户余额流水联动、基础统计、AI 编排或后续脚手架；开始 M2 前应先补对应中文模块文档。
