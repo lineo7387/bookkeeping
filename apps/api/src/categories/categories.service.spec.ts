@@ -4,13 +4,17 @@ import { CategoriesRepository } from './categories.repository';
 import { CategoriesService } from './categories.service';
 import { LedgerPolicyService } from '../policies/ledger-policy.service';
 
+type CategoriesRepositoryMock = jest.Mocked<
+  Pick<
+    CategoriesRepository,
+    'listActiveByLedger' | 'create' | 'findActiveById' | 'update' | 'hasActiveChildren' | 'archive'
+  > & {
+    findActiveForUser: (userId: string, categoryId: string) => Promise<CategorySummary | null>;
+  }
+>;
+
 describe('CategoriesService', () => {
-  let repository: jest.Mocked<
-    Pick<
-      CategoriesRepository,
-      'listActiveByLedger' | 'create' | 'findActiveById' | 'update' | 'hasActiveChildren' | 'archive'
-    >
-  >;
+  let repository: CategoriesRepositoryMock;
   let policy: jest.Mocked<Pick<LedgerPolicyService, 'canViewLedger' | 'canManageLedger'>>;
   let service: CategoriesService;
 
@@ -33,6 +37,7 @@ describe('CategoriesService', () => {
       listActiveByLedger: jest.fn(),
       create: jest.fn(),
       findActiveById: jest.fn(),
+      findActiveForUser: jest.fn(),
       update: jest.fn(),
       hasActiveChildren: jest.fn(),
       archive: jest.fn(),
@@ -45,6 +50,7 @@ describe('CategoriesService', () => {
       repository as unknown as CategoriesRepository,
       policy as unknown as LedgerPolicyService,
     );
+    repository.findActiveForUser.mockImplementation((_userId, categoryId) => repository.findActiveById(categoryId));
   });
 
   it('lists categories only after checking ledger view access', async () => {
@@ -155,6 +161,32 @@ describe('CategoriesService', () => {
   it('requires ledger management before updating a category', async () => {
     policy.canManageLedger.mockResolvedValue(false);
     repository.findActiveById.mockResolvedValue(categorySummary);
+
+    await expect(service.updateCategory('user_1', 'category_1', { name: '餐饮备用' })).rejects.toMatchObject({
+      constructor: ForbiddenException,
+      response: { success: false, error: { code: 'MEMBER_ROLE_DENIED' } },
+    });
+    expect(policy.canManageLedger).toHaveBeenCalledWith('user_1', 'ledger_1');
+    expect(repository.update).not.toHaveBeenCalled();
+  });
+
+  it('rejects update as validation when the category is not visible to the user', async () => {
+    repository.findActiveById.mockResolvedValue(categorySummary);
+    repository.findActiveForUser.mockResolvedValue(null);
+
+    await expect(service.updateCategory('user_1', 'category_1', { name: '餐饮备用' })).rejects.toMatchObject({
+      constructor: BadRequestException,
+      response: { success: false, error: { code: 'VALIDATION_FAILED' } },
+    });
+    expect(repository.findActiveForUser).toHaveBeenCalledWith('user_1', 'category_1');
+    expect(policy.canManageLedger).not.toHaveBeenCalled();
+    expect(repository.update).not.toHaveBeenCalled();
+  });
+
+  it('still returns member role denied when a visible category user cannot manage the ledger', async () => {
+    policy.canManageLedger.mockResolvedValue(false);
+    repository.findActiveById.mockResolvedValue(categorySummary);
+    repository.findActiveForUser.mockResolvedValue(categorySummary);
 
     await expect(service.updateCategory('user_1', 'category_1', { name: '餐饮备用' })).rejects.toMatchObject({
       constructor: ForbiddenException,
@@ -286,6 +318,33 @@ describe('CategoriesService', () => {
   it('requires ledger management before deleting a category', async () => {
     policy.canManageLedger.mockResolvedValue(false);
     repository.findActiveById.mockResolvedValue(categorySummary);
+
+    await expect(service.deleteCategory('user_1', 'category_1')).rejects.toMatchObject({
+      constructor: ForbiddenException,
+      response: { success: false, error: { code: 'MEMBER_ROLE_DENIED' } },
+    });
+    expect(policy.canManageLedger).toHaveBeenCalledWith('user_1', 'ledger_1');
+    expect(repository.hasActiveChildren).not.toHaveBeenCalled();
+    expect(repository.archive).not.toHaveBeenCalled();
+  });
+
+  it('rejects delete as validation when the category is not visible to the user', async () => {
+    repository.findActiveById.mockResolvedValue(categorySummary);
+    repository.findActiveForUser.mockResolvedValue(null);
+
+    await expect(service.deleteCategory('user_1', 'category_1')).rejects.toMatchObject({
+      constructor: BadRequestException,
+      response: { success: false, error: { code: 'VALIDATION_FAILED' } },
+    });
+    expect(repository.findActiveForUser).toHaveBeenCalledWith('user_1', 'category_1');
+    expect(policy.canManageLedger).not.toHaveBeenCalled();
+    expect(repository.archive).not.toHaveBeenCalled();
+  });
+
+  it('still returns member role denied when a visible category user cannot delete in the ledger', async () => {
+    policy.canManageLedger.mockResolvedValue(false);
+    repository.findActiveById.mockResolvedValue(categorySummary);
+    repository.findActiveForUser.mockResolvedValue(categorySummary);
 
     await expect(service.deleteCategory('user_1', 'category_1')).rejects.toMatchObject({
       constructor: ForbiddenException,

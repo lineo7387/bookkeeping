@@ -62,6 +62,28 @@ export class CategoriesRepository {
     return category ? toCategorySummary(category) : null;
   }
 
+  async findActiveForUser(userId: string, categoryId: string): Promise<CategorySummary | null> {
+    const category = await this.prisma.category.findFirst({
+      where: {
+        id: categoryId,
+        archivedAt: null,
+        ledger: {
+          is: {
+            archivedAt: null,
+            members: {
+              some: {
+                userId,
+                status: 'active',
+              },
+            },
+          },
+        },
+      },
+    });
+
+    return category ? toCategorySummary(category) : null;
+  }
+
   async update(categoryId: string, dto: UpdateCategoryDto): Promise<CategorySummary | null> {
     const result = await this.prisma.category.updateMany({
       where: {

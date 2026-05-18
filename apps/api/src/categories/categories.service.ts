@@ -33,7 +33,7 @@ export class CategoriesService {
   }
 
   async updateCategory(userId: string, categoryId: string, dto: UpdateCategoryDto): Promise<CategorySummary> {
-    const category = await this.getActiveCategory(categoryId);
+    const category = await this.getVisibleActiveCategory(userId, categoryId);
     await this.requireManageLedger(userId, category.ledgerId);
 
     if (dto.parentId) {
@@ -52,7 +52,7 @@ export class CategoriesService {
   }
 
   async deleteCategory(userId: string, categoryId: string): Promise<{ archived: true }> {
-    const category = await this.getActiveCategory(categoryId);
+    const category = await this.getVisibleActiveCategory(userId, categoryId);
     await this.requireManageLedger(userId, category.ledgerId);
 
     if (category.isSystem) {
@@ -70,6 +70,14 @@ export class CategoriesService {
     }
 
     return archived;
+  }
+
+  private async getVisibleActiveCategory(userId: string, categoryId: string): Promise<CategorySummary> {
+    const category = await this.categoriesRepository.findActiveForUser(userId, categoryId);
+    if (!category) {
+      throw validationFailed('Category not found');
+    }
+    return category;
   }
 
   private async getActiveCategory(categoryId: string): Promise<CategorySummary> {
