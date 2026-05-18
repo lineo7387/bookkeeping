@@ -89,10 +89,28 @@ export class TransactionsService {
     const transaction = await this.getActiveTransaction(transactionId);
 
     const nextType = dto.type ?? transaction.type;
+    if (dto.transferTargetAccountId !== undefined && nextType !== 'transfer') {
+      throw validationFailed('Transfer target account is only valid for transfer transactions');
+    }
+
+    const shouldValidateTransfer =
+      nextType === 'transfer' &&
+      (dto.type !== undefined ||
+        dto.transferTargetAccountId !== undefined ||
+        dto.visibility !== undefined ||
+        dto.accountId !== undefined);
+    if (
+      shouldValidateTransfer &&
+      !dto.transferTargetAccountId &&
+      !getExistingTransferTargetAccountId(transaction.metadata)
+    ) {
+      throw validationFailed('Transfer target account is required');
+    }
+
     let account: AccountSummary | null = null;
     let finalVisibility = dto.visibility;
 
-    if (dto.accountId !== undefined || dto.visibility !== undefined) {
+    if (dto.accountId !== undefined || dto.visibility !== undefined || shouldValidateTransfer) {
       account = await this.getVisibleActiveAccount(userId, dto.accountId ?? transaction.accountId);
       if (account.ledgerId !== transaction.ledgerId) {
         throw accountNotFound();
@@ -110,12 +128,6 @@ export class TransactionsService {
           dto.categoryId !== undefined ? dto.categoryId : transaction.categoryId,
         )
       : undefined;
-    const shouldValidateTransfer =
-      nextType === 'transfer' &&
-      (dto.type !== undefined ||
-        dto.transferTargetAccountId !== undefined ||
-        dto.visibility !== undefined ||
-        dto.accountId !== undefined);
     const metadata = shouldValidateTransfer
       ? await this.resolveTransferMetadata(
           userId,

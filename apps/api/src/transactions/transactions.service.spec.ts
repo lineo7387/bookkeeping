@@ -354,6 +354,57 @@ describe('TransactionsService', () => {
     );
   });
 
+  it('forces private visibility when a type-only transfer update has a private source account', async () => {
+    const transferTransaction: TransactionSummary = {
+      ...transaction,
+      type: 'transfer',
+      categoryId: null,
+      visibility: 'ledger',
+      metadata: { transferTargetAccountId: 'account_2' },
+    };
+    policy.canUpdateTransaction.mockResolvedValue(true);
+    policy.canViewAccount.mockResolvedValue(true);
+    repository.findActiveById.mockResolvedValue(transferTransaction);
+    repository.findActiveAccountById.mockImplementation(async (accountId) => {
+      if (accountId === 'account_1') {
+        return { ...account, visibility: 'private' };
+      }
+      if (accountId === 'account_2') {
+        return { ...account, id: 'account_2', name: '银行卡' };
+      }
+      return null;
+    });
+    repository.update.mockResolvedValue({ ...transferTransaction, visibility: 'private' });
+
+    await expect(service.updateTransaction('user_1', 'transaction_1', { type: 'transfer' })).resolves.toMatchObject({
+      visibility: 'private',
+    });
+
+    expect(policy.canViewAccount).toHaveBeenCalledWith('user_1', 'account_1');
+    expect(policy.canViewAccount).toHaveBeenCalledWith('user_1', 'account_2');
+    expect(repository.update).toHaveBeenCalledWith(
+      'transaction_1',
+      expect.objectContaining({
+        type: 'transfer',
+        visibility: 'private',
+        metadata: { transferTargetAccountId: 'account_2' },
+      }),
+    );
+  });
+
+  it('rejects transferTargetAccountId on a non-transfer update', async () => {
+    policy.canUpdateTransaction.mockResolvedValue(true);
+    repository.findActiveById.mockResolvedValue(transaction);
+
+    await expect(
+      service.updateTransaction('user_1', 'transaction_1', { transferTargetAccountId: 'account_2' }),
+    ).rejects.toMatchObject({
+      constructor: BadRequestException,
+      response: { success: false, error: { code: 'VALIDATION_FAILED' } },
+    });
+    expect(repository.update).not.toHaveBeenCalled();
+  });
+
   it('uses non-leaky not found behavior when update policy denies access', async () => {
     policy.canUpdateTransaction.mockResolvedValue(false);
 
