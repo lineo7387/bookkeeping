@@ -258,6 +258,25 @@ describe('TransactionsService', () => {
     );
   });
 
+  it('rejects creating a transfer without transferTargetAccountId', async () => {
+    policy.canCreateTransaction.mockResolvedValue(true);
+    policy.canViewAccount.mockResolvedValue(true);
+    repository.findActiveAccountById.mockResolvedValue(account);
+
+    await expect(
+      service.createTransaction('user_1', 'ledger_1', {
+        type: 'transfer',
+        amount: '100.00',
+        occurredAt: '2026-05-18T10:00:00.000Z',
+        accountId: 'account_1',
+      }),
+    ).rejects.toMatchObject({
+      constructor: BadRequestException,
+      response: { success: false, error: { code: 'VALIDATION_FAILED' } },
+    });
+    expect(repository.create).not.toHaveBeenCalled();
+  });
+
   it('requires canViewTransaction before fetching a transaction by id', async () => {
     policy.canViewTransaction.mockResolvedValue(true);
     repository.findActiveById.mockResolvedValue(transaction);
@@ -291,6 +310,48 @@ describe('TransactionsService', () => {
 
     expect(policy.canUpdateTransaction).toHaveBeenCalledWith('user_1', 'transaction_1');
     expect(repository.update).toHaveBeenCalledWith('transaction_1', expect.objectContaining({ merchant: '便利店' }));
+  });
+
+  it('rejects updating a non-transfer to transfer without transferTargetAccountId', async () => {
+    policy.canUpdateTransaction.mockResolvedValue(true);
+    repository.findActiveById.mockResolvedValue(transaction);
+
+    await expect(service.updateTransaction('user_1', 'transaction_1', { type: 'transfer' })).rejects.toMatchObject({
+      constructor: BadRequestException,
+      response: { success: false, error: { code: 'VALIDATION_FAILED' } },
+    });
+    expect(repository.update).not.toHaveBeenCalled();
+  });
+
+  it('forces private visibility when updating only visibility on an existing transfer with a private target account', async () => {
+    const transferTransaction: TransactionSummary = {
+      ...transaction,
+      type: 'transfer',
+      categoryId: null,
+      visibility: 'private',
+      metadata: { transferTargetAccountId: 'account_2' },
+    };
+    policy.canUpdateTransaction.mockResolvedValue(true);
+    policy.canViewAccount.mockResolvedValue(true);
+    repository.findActiveById.mockResolvedValue(transferTransaction);
+    repository.findActiveAccountById
+      .mockResolvedValueOnce(account)
+      .mockResolvedValueOnce({ ...account, id: 'account_2', visibility: 'private' });
+    repository.update.mockResolvedValue({ ...transferTransaction, visibility: 'private' });
+
+    await expect(service.updateTransaction('user_1', 'transaction_1', { visibility: 'ledger' })).resolves.toMatchObject({
+      visibility: 'private',
+    });
+
+    expect(policy.canViewAccount).toHaveBeenCalledWith('user_1', 'account_1');
+    expect(policy.canViewAccount).toHaveBeenCalledWith('user_1', 'account_2');
+    expect(repository.update).toHaveBeenCalledWith(
+      'transaction_1',
+      expect.objectContaining({
+        visibility: 'private',
+        metadata: { transferTargetAccountId: 'account_2' },
+      }),
+    );
   });
 
   it('uses non-leaky not found behavior when update policy denies access', async () => {

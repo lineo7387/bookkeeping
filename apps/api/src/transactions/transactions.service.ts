@@ -110,9 +110,20 @@ export class TransactionsService {
           dto.categoryId !== undefined ? dto.categoryId : transaction.categoryId,
         )
       : undefined;
-    const shouldValidateTransfer = dto.type === 'transfer' || dto.transferTargetAccountId !== undefined;
+    const shouldValidateTransfer =
+      nextType === 'transfer' &&
+      (dto.type !== undefined ||
+        dto.transferTargetAccountId !== undefined ||
+        dto.visibility !== undefined ||
+        dto.accountId !== undefined);
     const metadata = shouldValidateTransfer
-      ? await this.resolveTransferMetadata(userId, transaction.ledgerId, nextType, dto.transferTargetAccountId)
+      ? await this.resolveTransferMetadata(
+          userId,
+          transaction.ledgerId,
+          nextType,
+          dto.transferTargetAccountId,
+          transaction.metadata,
+        )
       : null;
     if (metadata?.targetAccount.visibility === 'private') {
       finalVisibility = 'private';
@@ -204,12 +215,21 @@ export class TransactionsService {
     ledgerId: string,
     type: TransactionType,
     transferTargetAccountId?: string,
+    existingMetadata?: Record<string, unknown> | null,
   ): Promise<{ value: TransferMetadata; targetAccount: AccountSummary } | null> {
-    if (type !== 'transfer' || !transferTargetAccountId) {
+    if (type !== 'transfer') {
+      if (transferTargetAccountId) {
+        throw validationFailed('Transfer target account is only valid for transfer transactions');
+      }
       return null;
     }
 
-    const targetAccount = await this.getVisibleActiveAccount(userId, transferTargetAccountId);
+    const targetAccountId = transferTargetAccountId ?? getExistingTransferTargetAccountId(existingMetadata);
+    if (!targetAccountId) {
+      throw validationFailed('Transfer target account is required');
+    }
+
+    const targetAccount = await this.getVisibleActiveAccount(userId, targetAccountId);
     if (targetAccount.ledgerId !== ledgerId) {
       throw validationFailed('Transfer target account is invalid');
     }
@@ -263,4 +283,9 @@ function transactionNotFound(): NotFoundException {
 
 function validationFailed(message: string): BadRequestException {
   return new BadRequestException(fail('VALIDATION_FAILED', message));
+}
+
+function getExistingTransferTargetAccountId(metadata?: Record<string, unknown> | null): string | undefined {
+  const targetAccountId = metadata?.transferTargetAccountId;
+  return typeof targetAccountId === 'string' && targetAccountId.length > 0 ? targetAccountId : undefined;
 }
