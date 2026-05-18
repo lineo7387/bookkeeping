@@ -6,71 +6,64 @@
 
 详细设计以以下文件为准：
 
-- `designer.md`：前端视觉设计系统。
 - `docs/superpowers/specs/2026-05-17-bookkeeping-platform-design.md`：产品、架构、数据库、权限、接口和迭代设计。
+- `designer.md`：前端视觉设计系统。
 - `.codex/project-context.md`：AI/Agent 快速上下文。
 - `.codex/development-rules.md`：开发和文档规则。
+- `docs/modules/agent-context/Agent协作上下文说明.md`：monorepo 分层 Agent 上下文维护规则。
 
-## 技术方向
+## 全局硬规则
 
-- Monorepo：pnpm workspace。
-- 后端：NestJS 模块化单体。
-- AI 服务：FastAPI 独立服务。
-- 数据库：PostgreSQL。
-- 缓存和队列：Redis + BullMQ。
-- 后台 Web：Vue 3 + TypeScript + Vite。
-- 后台 Web 样式：Tailwind CSS 优先，组件私有样式使用 Vue SFC scoped style。
-- 用户多端：uni-app + Vue 3 + TypeScript。
-- ORM：Prisma。
-
-## 当前工程状态
-
-- 已初始化 pnpm workspace。
-- 已创建 `apps/api`：NestJS 11、Prisma 7、`@nestjs/config`、`.env.example`。
-- `apps/api` 已完成 M1 基础能力：PrismaService、认证与会话、JWT Guard、用户资料、账本、成员角色、Ledger Policy 层和对应单元测试。
-- `apps/api` 已在 `codex/m15-accounts-categories-transactions` 完成 M1.5 账户、分类、流水基础闭环：Prisma 模型、Accounts/Categories/Transactions API、私密账户、私密流水、转账 metadata、软删除、Decimal 金额校验、带时区时间校验和对应单元测试。
-- 已创建 `apps/admin-web`：Vue 3、TypeScript、Vite、Tailwind CSS、lucide-vue-next。
-- 后台首页位于 `apps/admin-web/src/views/DashboardView.vue`。
-- 后台 Web 当前使用静态数据，尚未接入真实 API。
-- 已创建 `packages/shared-types`：共享 API 响应、账本权限、AI 候选结果等基础类型。
-- `packages/shared-types` 已补充账户、分类、流水摘要类型和交易来源类型。
-- 已创建 `packages/api-client`：面向 NestJS 对外 API 的轻量请求客户端。
-- 尚未创建 `apps/ai-service`、`apps/mobile`。
-
-## 协作规则
-
-- 每个功能必须有简体中文文档。
+- 本项目采用 pnpm workspace monorepo；具体应用和 package 的技术栈、目录结构和最佳实践以对应子目录 `AGENTS.md` 为准。
+- 每个功能必须有简体中文文档，文档是交付内容的一部分。
 - 代码命名、接口字段、数据库字段使用英文。
 - 产品说明、模块说明、交接说明使用简体中文。
-- 项目脚手架创建命令由用户执行；Agent 只给出命令提示，创建后再修改配置。
-- 不要绕过 NestJS 让前端直接调用 FastAPI。
-- AI 服务只生成候选结果，用户确认后才创建正式流水。
+- 项目脚手架创建命令由用户执行；Agent 只给出命令提示，创建后再修改配置和文档。
+- 前端只能调用 NestJS 对外 API，不直接调用 FastAPI。
+- FastAPI 只生成 AI 候选结果，不承担认证、权限、主业务状态或正式流水创建。
+- AI 候选结果必须由用户确认后，才允许由 NestJS 创建正式流水。
 - 所有交易归属于 `ledger`，不要直接建模为只归属于 `user`。
 - 所有协作权限通过 `ledger_members` 和 Policy 层判断。
 - 前端视觉实现必须优先遵循根目录 `designer.md`。
-- 后台 Web 采用克制版 Soft Clay Admin：保留圆润、柔和阴影和品牌色，但降低装饰密度，优先保证信息扫描效率。
-- 页面文件必须放在 `views` 目录。
-- 全局样式只放 token、字体、reset、动画等跨应用内容。
-- 组件独有样式写在对应 `.vue` 文件的 `<style scoped>` 中。
-- 前端布局和常规样式优先使用 Tailwind CSS。
-- 不要把后台侧边栏、表格、列表等信息密集区域做成过度黏土化或展示页风格。
+- monorepo 子项目可以维护自己的 `AGENTS.md`，但只能补充局部规则，不能覆盖根目录硬规则。
+- 子项目 `AGENTS.md` 应保持短、准、局部化，避免重复整段根目录说明。
+- 推荐 Agent skills 由当前工作目录最近的 `AGENTS.md` 说明；根目录只保留全局协作边界。
+
+## 分层 Agent 上下文
+
+当前和规划中的局部上下文：
+
+- `apps/api/AGENTS.md`：NestJS 主业务服务规则。
+- `apps/admin-web/AGENTS.md`：Vue 后台管理端规则。
+- `apps/ai-service/AGENTS.md`：FastAPI AI 服务规则。
+- `apps/mobile/AGENTS.md`：uni-app 用户多端规则。
+- `packages/shared-types/AGENTS.md`：共享类型包规则。
+- `packages/api-client/AGENTS.md`：NestJS API 请求客户端规则。
+- `packages/validation/AGENTS.md`：共享校验包规则。
+- `packages/config/AGENTS.md`：共享工程配置包规则。
+
+未创建代码脚手架的目录只能维护协作说明，不应提前添加业务代码、package.json 或框架配置。
 
 ## 修改前检查
 
 开始任何实现前，应先阅读：
 
-1. `docs/superpowers/specs/2026-05-17-bookkeeping-platform-design.md`
-2. `designer.md`
-3. `.codex/development-rules.md`
-4. 对应功能的中文模块文档
+1. 根目录 `AGENTS.md`
+2. 当前工作目录最近的 `AGENTS.md`
+3. `docs/superpowers/specs/2026-05-17-bookkeeping-platform-design.md`
+4. `.codex/development-rules.md`
+5. 对应功能的中文模块文档
 
 如果对应功能文档不存在，应先创建文档，再实现代码。
 
-## 推荐技能
+## 当前工程状态
 
-- 修改 `apps/api`、NestJS 模块、Controller、Service、Guard、Policy、Prisma 访问层或后端测试前，优先使用 `nestjs-best-practices`。
-- 修改或创建 `apps/ai-service`、FastAPI 路由、Pydantic 模型、内部 AI 契约或 Python 测试前，优先使用 `fastapi`。
-- 技能只能补充框架最佳实践，不能覆盖本项目规则：前端只调用 NestJS、FastAPI 只生成候选结果、用户确认后才创建正式流水、所有交易归属于 `ledger`。
+- 已初始化 pnpm workspace。
+- `apps/api` 已完成 M1 和 M1.5：认证、会话、用户资料、账本、成员角色、Ledger Policy、账户、分类、流水基础闭环和对应单元测试。
+- `apps/admin-web` 已创建 Vue 3 后台首页，当前使用静态数据，尚未接入真实 API。
+- `packages/shared-types` 已补充账户、分类、流水摘要类型和交易来源类型。
+- `packages/api-client` 已创建面向 NestJS 对外 API 的轻量请求客户端。
+- `apps/ai-service`、`apps/mobile`、`packages/validation`、`packages/config` 尚未创建代码脚手架。
 
 ## 新对话建议
 
