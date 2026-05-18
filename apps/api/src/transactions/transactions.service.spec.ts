@@ -405,6 +405,41 @@ describe('TransactionsService', () => {
     expect(repository.update).not.toHaveBeenCalled();
   });
 
+  it('clears transfer metadata when updating a transfer to an expense', async () => {
+    const transferTransaction: TransactionSummary = {
+      ...transaction,
+      type: 'transfer',
+      categoryId: null,
+      metadata: { transferTargetAccountId: 'account_2' },
+    };
+    policy.canUpdateTransaction.mockResolvedValue(true);
+    repository.findActiveById.mockResolvedValue(transferTransaction);
+    repository.findActiveCategoryById.mockResolvedValue(expenseCategory);
+    repository.update.mockResolvedValue({
+      ...transaction,
+      type: 'expense',
+      categoryId: 'category_1',
+      metadata: null,
+    });
+
+    await expect(
+      service.updateTransaction('user_1', 'transaction_1', { type: 'expense', categoryId: 'category_1' }),
+    ).resolves.toMatchObject({
+      type: 'expense',
+      categoryId: 'category_1',
+      metadata: null,
+    });
+
+    expect(repository.update).toHaveBeenCalledWith(
+      'transaction_1',
+      expect.objectContaining({
+        type: 'expense',
+        categoryId: 'category_1',
+        metadata: null,
+      }),
+    );
+  });
+
   it('uses non-leaky not found behavior when update policy denies access', async () => {
     policy.canUpdateTransaction.mockResolvedValue(false);
 

@@ -140,6 +140,7 @@ export class TransactionsService {
     if (metadata?.targetAccount.visibility === 'private') {
       finalVisibility = 'private';
     }
+    const metadataUpdate = resolveMetadataUpdate(transaction.type, nextType, metadata?.value);
 
     const updateData: TransactionUpdateData = {
       accountId: account?.id,
@@ -151,7 +152,7 @@ export class TransactionsService {
       merchant: dto.merchant,
       note: dto.note,
       visibility: finalVisibility,
-      metadata: metadata ? metadata.value : undefined,
+      metadata: metadataUpdate,
     };
 
     const updated = await this.transactionsRepository.update(transactionId, updateData);
@@ -300,4 +301,15 @@ function validationFailed(message: string): BadRequestException {
 function getExistingTransferTargetAccountId(metadata?: Record<string, unknown> | null): string | undefined {
   const targetAccountId = metadata?.transferTargetAccountId;
   return typeof targetAccountId === 'string' && targetAccountId.length > 0 ? targetAccountId : undefined;
+}
+
+function resolveMetadataUpdate(
+  previousType: TransactionType,
+  nextType: TransactionType,
+  transferMetadata?: TransferMetadata,
+): TransferMetadata | null | undefined {
+  if (transferMetadata) {
+    return transferMetadata;
+  }
+  return previousType === 'transfer' && nextType !== 'transfer' ? null : undefined;
 }
