@@ -106,23 +106,21 @@ describe('AccountsService', () => {
     });
   });
 
-  it('allows only the owner to update a private account', async () => {
-    policy.canViewAccount.mockResolvedValue(true);
-    repository.findActiveById.mockResolvedValue({
-      ...accountSummary,
-      visibility: 'private',
-      ownerId: 'user_2',
-    });
+  it('returns account not found before loading details when account policy denies update access', async () => {
+    policy.canViewAccount.mockResolvedValue(false);
 
     await expect(service.updateAccount('user_1', 'account_1', { name: '私密现金' })).rejects.toMatchObject({
-      constructor: ForbiddenException,
-      response: { success: false, error: { code: 'PRIVATE_RESOURCE_DENIED' } },
+      constructor: NotFoundException,
+      response: { success: false, error: { code: 'ACCOUNT_NOT_FOUND' } },
     });
+    expect(policy.canViewAccount).toHaveBeenCalledWith('user_1', 'account_1');
+    expect(repository.findActiveById).not.toHaveBeenCalled();
     expect(policy.canManageLedger).not.toHaveBeenCalled();
     expect(repository.update).not.toHaveBeenCalled();
   });
 
   it('requires ledger management before updating a shared account', async () => {
+    policy.canViewAccount.mockResolvedValue(true);
     policy.canManageLedger.mockResolvedValue(false);
     repository.findActiveById.mockResolvedValue(accountSummary);
 
@@ -130,6 +128,7 @@ describe('AccountsService', () => {
       constructor: ForbiddenException,
       response: { success: false, error: { code: 'MEMBER_ROLE_DENIED' } },
     });
+    expect(policy.canViewAccount).toHaveBeenCalledWith('user_1', 'account_1');
     expect(policy.canManageLedger).toHaveBeenCalledWith('user_1', 'ledger_1');
     expect(repository.update).not.toHaveBeenCalled();
   });
@@ -152,22 +151,19 @@ describe('AccountsService', () => {
   });
 
   it('denies private account update when the owner is no longer allowed by account policy', async () => {
-    repository.findActiveById.mockResolvedValue({
-      ...accountSummary,
-      visibility: 'private',
-      ownerId: 'user_1',
-    });
     policy.canViewAccount.mockResolvedValue(false);
 
     await expect(service.updateAccount('user_1', 'account_1', { name: '私密现金' })).rejects.toMatchObject({
-      constructor: ForbiddenException,
-      response: { success: false, error: { code: 'PRIVATE_RESOURCE_DENIED' } },
+      constructor: NotFoundException,
+      response: { success: false, error: { code: 'ACCOUNT_NOT_FOUND' } },
     });
     expect(policy.canViewAccount).toHaveBeenCalledWith('user_1', 'account_1');
+    expect(repository.findActiveById).not.toHaveBeenCalled();
     expect(repository.update).not.toHaveBeenCalled();
   });
 
   it('archives an account instead of removing it', async () => {
+    policy.canViewAccount.mockResolvedValue(true);
     policy.canManageLedger.mockResolvedValue(true);
     repository.findActiveById.mockResolvedValue(accountSummary);
     repository.archive.mockResolvedValue({ archived: true });
@@ -178,38 +174,49 @@ describe('AccountsService', () => {
     expect(repository.archive).toHaveBeenCalledWith('account_1');
   });
 
-  it('allows only the owner to delete a private account', async () => {
-    policy.canViewAccount.mockResolvedValue(true);
-    repository.findActiveById.mockResolvedValue({
+  it('archives a private account when account policy allows it without requiring ledger management', async () => {
+    const privateAccount = {
       ...accountSummary,
-      visibility: 'private',
-      ownerId: 'user_2',
-    });
+      visibility: 'private' as const,
+      ownerId: 'user_1',
+    };
+    policy.canViewAccount.mockResolvedValue(true);
+    repository.findActiveById.mockResolvedValue(privateAccount);
+    repository.archive.mockResolvedValue({ archived: true });
+
+    await expect(service.deleteAccount('user_1', 'account_1')).resolves.toEqual({ archived: true });
+
+    expect(policy.canViewAccount).toHaveBeenCalledWith('user_1', 'account_1');
+    expect(policy.canManageLedger).not.toHaveBeenCalled();
+    expect(repository.archive).toHaveBeenCalledWith('account_1');
+  });
+
+  it('returns account not found before loading details when account policy denies delete access', async () => {
+    policy.canViewAccount.mockResolvedValue(false);
 
     await expect(service.deleteAccount('user_1', 'account_1')).rejects.toMatchObject({
-      constructor: ForbiddenException,
-      response: { success: false, error: { code: 'PRIVATE_RESOURCE_DENIED' } },
+      constructor: NotFoundException,
+      response: { success: false, error: { code: 'ACCOUNT_NOT_FOUND' } },
     });
+    expect(policy.canViewAccount).toHaveBeenCalledWith('user_1', 'account_1');
+    expect(repository.findActiveById).not.toHaveBeenCalled();
     expect(repository.archive).not.toHaveBeenCalled();
   });
 
   it('denies private account delete when the owner is no longer allowed by account policy', async () => {
-    repository.findActiveById.mockResolvedValue({
-      ...accountSummary,
-      visibility: 'private',
-      ownerId: 'user_1',
-    });
     policy.canViewAccount.mockResolvedValue(false);
 
     await expect(service.deleteAccount('user_1', 'account_1')).rejects.toMatchObject({
-      constructor: ForbiddenException,
-      response: { success: false, error: { code: 'PRIVATE_RESOURCE_DENIED' } },
+      constructor: NotFoundException,
+      response: { success: false, error: { code: 'ACCOUNT_NOT_FOUND' } },
     });
     expect(policy.canViewAccount).toHaveBeenCalledWith('user_1', 'account_1');
+    expect(repository.findActiveById).not.toHaveBeenCalled();
     expect(repository.archive).not.toHaveBeenCalled();
   });
 
   it('raises account not found when updating an archived or missing account', async () => {
+    policy.canViewAccount.mockResolvedValue(true);
     repository.findActiveById.mockResolvedValue(null);
 
     await expect(service.updateAccount('user_1', 'account_1', { name: '不存在' })).rejects.toMatchObject({

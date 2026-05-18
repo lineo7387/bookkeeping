@@ -24,6 +24,7 @@ export class AccountsService {
   }
 
   async updateAccount(userId: string, accountId: string, dto: UpdateAccountDto): Promise<AccountSummary> {
+    await this.requireViewAccount(userId, accountId);
     const account = await this.getActiveAccount(accountId);
     await this.requireAccountManage(userId, account);
 
@@ -36,6 +37,7 @@ export class AccountsService {
   }
 
   async deleteAccount(userId: string, accountId: string): Promise<{ archived: true }> {
+    await this.requireViewAccount(userId, accountId);
     const account = await this.getActiveAccount(accountId);
     await this.requireAccountManage(userId, account);
     return this.accountsRepository.archive(accountId);
@@ -63,15 +65,15 @@ export class AccountsService {
     }
   }
 
+  private async requireViewAccount(userId: string, accountId: string): Promise<void> {
+    const allowed = await this.ledgerPolicyService.canViewAccount(userId, accountId);
+    if (!allowed) {
+      throw accountNotFound();
+    }
+  }
+
   private async requireAccountManage(userId: string, account: AccountSummary): Promise<void> {
     if (account.visibility === 'private') {
-      const visible = await this.ledgerPolicyService.canViewAccount(userId, account.id);
-      if (!visible) {
-        throw privateDenied();
-      }
-      if (account.ownerId !== userId) {
-        throw privateDenied();
-      }
       return;
     }
 
@@ -81,10 +83,6 @@ export class AccountsService {
 
 function roleDenied(): ForbiddenException {
   return new ForbiddenException(fail('MEMBER_ROLE_DENIED', 'Member role denied'));
-}
-
-function privateDenied(): ForbiddenException {
-  return new ForbiddenException(fail('PRIVATE_RESOURCE_DENIED', 'Private resource denied'));
 }
 
 function accountNotFound(): NotFoundException {

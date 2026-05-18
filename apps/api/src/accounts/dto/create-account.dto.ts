@@ -4,7 +4,7 @@ import type { AccountType, AccountVisibility } from '@bookkeeping/shared-types';
 
 const ACCOUNT_TYPES: AccountType[] = ['cash', 'bank_card', 'alipay', 'wechat', 'credit_card', 'other'];
 const ACCOUNT_VISIBILITIES: AccountVisibility[] = ['ledger', 'private'];
-const DECIMAL_STRING_PATTERN = /^-?\d+(\.\d{1,2})?$/;
+const DECIMAL_STRING_PATTERN = /^-?\d{1,16}(\.\d{1,2})?$/;
 
 export class CreateAccountDto {
   @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
