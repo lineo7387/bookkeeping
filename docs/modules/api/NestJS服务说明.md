@@ -24,7 +24,8 @@ NestJS 服务是系统唯一对外业务 API，负责认证、权限、账本协
 - 已完成认证基础：用户注册、登录、刷新 token、退出、`GET /auth/me`、JWT Strategy 和 `JwtAuthGuard`。
 - 已完成账本基础：创建账本、查询账本列表/详情、更新账本、归档账本、成员列表、成员角色更新、移除成员。
 - 已完成权限基础：`LedgerPolicyService` 和 `LedgerPolicyGuard`，账本访问和管理权限通过 `ledger_members` 判断。
-- 已完成数据模型：`users`、`user_sessions`、`ledgers`、`ledger_members`、`ledger_invitations`。
+- 已完成 M1.5 记账基础闭环：账户、分类、流水 Prisma 模型和 NestJS API，支持私密账户、私密流水、基础转账 metadata、软删除、Decimal 金额和 Policy 权限边界。
+- 已完成数据模型：`users`、`user_sessions`、`ledgers`、`ledger_members`、`ledger_invitations`、`accounts`、`categories`、`transactions`。
 
 ## 环境变量
 
@@ -45,9 +46,12 @@ pnpm --filter @bookkeeping/api build
 - 增加请求日志和审计日志。
 - 增加认证 E2E 测试和真实数据库集成测试。
 - 增加邀请链接和邀请接受流程。
-- 增加账户、分类、流水、AI 任务编排模块。
+- 增加账户余额流水联动、余额重算、AI 任务编排模块。
 
-## M1 模块文档
+## M1/M1.5 模块文档
 
 - `docs/modules/auth/认证与会话说明.md`
 - `docs/modules/ledgers/账本与成员权限说明.md`
+- `docs/modules/accounts/账户说明.md`
+- `docs/modules/categories/分类说明.md`
+- `docs/modules/transactions/流水说明.md`
