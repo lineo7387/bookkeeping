@@ -152,6 +152,101 @@ describe('CategoriesService', () => {
     expect(repository.update).not.toHaveBeenCalled();
   });
 
+  it('requires ledger management before updating a category', async () => {
+    policy.canManageLedger.mockResolvedValue(false);
+    repository.findActiveById.mockResolvedValue(categorySummary);
+
+    await expect(service.updateCategory('user_1', 'category_1', { name: '餐饮备用' })).rejects.toMatchObject({
+      constructor: ForbiddenException,
+      response: { success: false, error: { code: 'MEMBER_ROLE_DENIED' } },
+    });
+    expect(policy.canManageLedger).toHaveBeenCalledWith('user_1', 'ledger_1');
+    expect(repository.update).not.toHaveBeenCalled();
+  });
+
+  it('rejects update when a non-self parent belongs to another ledger', async () => {
+    policy.canManageLedger.mockResolvedValue(true);
+    repository.findActiveById
+      .mockResolvedValueOnce(categorySummary)
+      .mockResolvedValueOnce({ ...categorySummary, id: 'category_parent', ledgerId: 'ledger_2' });
+
+    await expect(
+      service.updateCategory('user_1', 'category_1', {
+        parentId: 'category_parent',
+      }),
+    ).rejects.toMatchObject({
+      constructor: BadRequestException,
+      response: { success: false, error: { code: 'VALIDATION_FAILED' } },
+    });
+    expect(repository.update).not.toHaveBeenCalled();
+  });
+
+  it('rejects update when a non-self parent has another type', async () => {
+    policy.canManageLedger.mockResolvedValue(true);
+    repository.findActiveById
+      .mockResolvedValueOnce(categorySummary)
+      .mockResolvedValueOnce({ ...categorySummary, id: 'category_parent', type: 'income' });
+
+    await expect(
+      service.updateCategory('user_1', 'category_1', {
+        parentId: 'category_parent',
+      }),
+    ).rejects.toMatchObject({
+      constructor: BadRequestException,
+      response: { success: false, error: { code: 'VALIDATION_FAILED' } },
+    });
+    expect(repository.update).not.toHaveBeenCalled();
+  });
+
+  it('updates a category after management and parent validation pass', async () => {
+    policy.canManageLedger.mockResolvedValue(true);
+    repository.findActiveById
+      .mockResolvedValueOnce(categorySummary)
+      .mockResolvedValueOnce({ ...categorySummary, id: 'category_parent' });
+    repository.update.mockResolvedValue({
+      ...categorySummary,
+      parentId: 'category_parent',
+      name: '早餐',
+      sortOrder: 20,
+    });
+
+    await expect(
+      service.updateCategory('user_1', 'category_1', {
+        parentId: 'category_parent',
+        name: '早餐',
+        sortOrder: 20,
+      }),
+    ).resolves.toMatchObject({ id: 'category_1', parentId: 'category_parent', name: '早餐', sortOrder: 20 });
+
+    expect(repository.update).toHaveBeenCalledWith('category_1', {
+      parentId: 'category_parent',
+      name: '早餐',
+      sortOrder: 20,
+    });
+  });
+
+  it('rejects update when the category is missing or archived', async () => {
+    repository.findActiveById.mockResolvedValue(null);
+
+    await expect(service.updateCategory('user_1', 'category_1', { name: '不存在' })).rejects.toMatchObject({
+      constructor: BadRequestException,
+      response: { success: false, error: { code: 'VALIDATION_FAILED' } },
+    });
+    expect(policy.canManageLedger).not.toHaveBeenCalled();
+    expect(repository.update).not.toHaveBeenCalled();
+  });
+
+  it('rejects update when no active row is affected', async () => {
+    policy.canManageLedger.mockResolvedValue(true);
+    repository.findActiveById.mockResolvedValue(categorySummary);
+    repository.update.mockResolvedValue(null);
+
+    await expect(service.updateCategory('user_1', 'category_1', { name: '餐饮备用' })).rejects.toMatchObject({
+      constructor: BadRequestException,
+      response: { success: false, error: { code: 'VALIDATION_FAILED' } },
+    });
+  });
+
   it('does not delete system categories', async () => {
     policy.canManageLedger.mockResolvedValue(true);
     repository.findActiveById.mockResolvedValue({ ...categorySummary, isSystem: true });
@@ -175,6 +270,42 @@ describe('CategoriesService', () => {
     });
     expect(repository.hasActiveChildren).toHaveBeenCalledWith('category_1');
     expect(repository.archive).not.toHaveBeenCalled();
+  });
+
+  it('rejects delete when the category is missing or archived', async () => {
+    repository.findActiveById.mockResolvedValue(null);
+
+    await expect(service.deleteCategory('user_1', 'category_1')).rejects.toMatchObject({
+      constructor: BadRequestException,
+      response: { success: false, error: { code: 'VALIDATION_FAILED' } },
+    });
+    expect(policy.canManageLedger).not.toHaveBeenCalled();
+    expect(repository.archive).not.toHaveBeenCalled();
+  });
+
+  it('requires ledger management before deleting a category', async () => {
+    policy.canManageLedger.mockResolvedValue(false);
+    repository.findActiveById.mockResolvedValue(categorySummary);
+
+    await expect(service.deleteCategory('user_1', 'category_1')).rejects.toMatchObject({
+      constructor: ForbiddenException,
+      response: { success: false, error: { code: 'MEMBER_ROLE_DENIED' } },
+    });
+    expect(policy.canManageLedger).toHaveBeenCalledWith('user_1', 'ledger_1');
+    expect(repository.hasActiveChildren).not.toHaveBeenCalled();
+    expect(repository.archive).not.toHaveBeenCalled();
+  });
+
+  it('rejects delete when no active row is affected', async () => {
+    policy.canManageLedger.mockResolvedValue(true);
+    repository.findActiveById.mockResolvedValue(categorySummary);
+    repository.hasActiveChildren.mockResolvedValue(false);
+    repository.archive.mockResolvedValue(null);
+
+    await expect(service.deleteCategory('user_1', 'category_1')).rejects.toMatchObject({
+      constructor: BadRequestException,
+      response: { success: false, error: { code: 'VALIDATION_FAILED' } },
+    });
   });
 
   it('archives a category instead of removing it', async () => {

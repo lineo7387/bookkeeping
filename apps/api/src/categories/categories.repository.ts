@@ -62,13 +62,20 @@ export class CategoriesRepository {
     return category ? toCategorySummary(category) : null;
   }
 
-  async update(categoryId: string, dto: UpdateCategoryDto): Promise<CategorySummary> {
-    const category = await this.prisma.category.update({
-      where: { id: categoryId },
+  async update(categoryId: string, dto: UpdateCategoryDto): Promise<CategorySummary | null> {
+    const result = await this.prisma.category.updateMany({
+      where: {
+        id: categoryId,
+        archivedAt: null,
+      },
       data: dto,
     });
 
-    return toCategorySummary(category);
+    if (result.count === 0) {
+      return null;
+    }
+
+    return this.findActiveById(categoryId);
   }
 
   async hasActiveChildren(categoryId: string): Promise<boolean> {
@@ -83,11 +90,18 @@ export class CategoriesRepository {
     return child !== null;
   }
 
-  async archive(categoryId: string): Promise<{ archived: true }> {
-    await this.prisma.category.update({
-      where: { id: categoryId },
+  async archive(categoryId: string): Promise<{ archived: true } | null> {
+    const result = await this.prisma.category.updateMany({
+      where: {
+        id: categoryId,
+        archivedAt: null,
+      },
       data: { archivedAt: new Date() },
     });
+
+    if (result.count === 0) {
+      return null;
+    }
 
     return { archived: true };
   }

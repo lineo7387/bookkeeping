@@ -43,7 +43,12 @@ export class CategoriesService {
       await this.validateParent(dto.parentId, category.ledgerId, category.type);
     }
 
-    return this.categoriesRepository.update(categoryId, dto);
+    const updated = await this.categoriesRepository.update(categoryId, dto);
+    if (!updated) {
+      throw validationFailed('Category not found');
+    }
+
+    return updated;
   }
 
   async deleteCategory(userId: string, categoryId: string): Promise<{ archived: true }> {
@@ -59,7 +64,12 @@ export class CategoriesService {
       throw validationFailed('Category with active children cannot be deleted');
     }
 
-    return this.categoriesRepository.archive(categoryId);
+    const archived = await this.categoriesRepository.archive(categoryId);
+    if (!archived) {
+      throw validationFailed('Category not found');
+    }
+
+    return archived;
   }
 
   private async getActiveCategory(categoryId: string): Promise<CategorySummary> {
