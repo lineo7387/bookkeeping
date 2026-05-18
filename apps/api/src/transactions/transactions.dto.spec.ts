@@ -18,6 +18,46 @@ describe('Transaction DTO validation', () => {
     await expect(validate(dto)).resolves.toHaveLength(0);
   });
 
+  it('requires create occurredAt to be a full timezone-aware ISO datetime', async () => {
+    const dateOnly = plainToInstance(CreateTransactionDto, {
+      type: 'expense',
+      amount: '86.00',
+      occurredAt: '2026-05-18',
+      accountId: 'account_1',
+      categoryId: 'category_1',
+    });
+    const noOffset = plainToInstance(CreateTransactionDto, {
+      type: 'expense',
+      amount: '86.00',
+      occurredAt: '2026-05-18T10:00:00',
+      accountId: 'account_1',
+      categoryId: 'category_1',
+    });
+    const utc = plainToInstance(CreateTransactionDto, {
+      type: 'expense',
+      amount: '86.00',
+      occurredAt: '2026-05-18T10:00:00.000Z',
+      accountId: 'account_1',
+      categoryId: 'category_1',
+    });
+    const offset = plainToInstance(CreateTransactionDto, {
+      type: 'expense',
+      amount: '86.00',
+      occurredAt: '2026-05-18T10:00:00+08:00',
+      accountId: 'account_1',
+      categoryId: 'category_1',
+    });
+
+    await expect(validate(dateOnly)).resolves.toEqual(
+      expect.arrayContaining([expect.objectContaining({ property: 'occurredAt' })]),
+    );
+    await expect(validate(noOffset)).resolves.toEqual(
+      expect.arrayContaining([expect.objectContaining({ property: 'occurredAt' })]),
+    );
+    await expect(validate(utc)).resolves.toHaveLength(0);
+    await expect(validate(offset)).resolves.toHaveLength(0);
+  });
+
   it('rejects zero, negative, over-precision, and oversized create amounts', async () => {
     const zero = plainToInstance(CreateTransactionDto, {
       type: 'expense',
@@ -110,6 +150,40 @@ describe('Transaction DTO validation', () => {
     );
   });
 
+  it('requires list date filters to be full timezone-aware ISO datetimes', async () => {
+    const dateOnly = plainToInstance(ListTransactionsQueryDto, {
+      occurredFrom: '2026-05-18',
+      occurredTo: '2026-05-19',
+    });
+    const noOffset = plainToInstance(ListTransactionsQueryDto, {
+      occurredFrom: '2026-05-18T10:00:00',
+      occurredTo: '2026-05-19T10:00:00',
+    });
+    const utc = plainToInstance(ListTransactionsQueryDto, {
+      occurredFrom: '2026-05-18T10:00:00.000Z',
+      occurredTo: '2026-05-19T10:00:00.000Z',
+    });
+    const offset = plainToInstance(ListTransactionsQueryDto, {
+      occurredFrom: '2026-05-18T10:00:00+08:00',
+      occurredTo: '2026-05-19T10:00:00+08:00',
+    });
+
+    await expect(validate(dateOnly)).resolves.toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ property: 'occurredFrom' }),
+        expect.objectContaining({ property: 'occurredTo' }),
+      ]),
+    );
+    await expect(validate(noOffset)).resolves.toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ property: 'occurredFrom' }),
+        expect.objectContaining({ property: 'occurredTo' }),
+      ]),
+    );
+    await expect(validate(utc)).resolves.toHaveLength(0);
+    await expect(validate(offset)).resolves.toHaveLength(0);
+  });
+
   it('validates update amounts and does not expose source changes', async () => {
     const valid = plainToInstance(UpdateTransactionDto, {
       amount: '1.00',
@@ -130,5 +204,29 @@ describe('Transaction DTO validation', () => {
         expect.objectContaining({ property: 'source' }),
       ]),
     );
+  });
+
+  it('requires update occurredAt to be a full timezone-aware ISO datetime', async () => {
+    const dateOnly = plainToInstance(UpdateTransactionDto, {
+      occurredAt: '2026-05-18',
+    });
+    const noOffset = plainToInstance(UpdateTransactionDto, {
+      occurredAt: '2026-05-18T10:00:00',
+    });
+    const utc = plainToInstance(UpdateTransactionDto, {
+      occurredAt: '2026-05-18T10:00:00.000Z',
+    });
+    const offset = plainToInstance(UpdateTransactionDto, {
+      occurredAt: '2026-05-18T10:00:00+08:00',
+    });
+
+    await expect(validate(dateOnly)).resolves.toEqual(
+      expect.arrayContaining([expect.objectContaining({ property: 'occurredAt' })]),
+    );
+    await expect(validate(noOffset)).resolves.toEqual(
+      expect.arrayContaining([expect.objectContaining({ property: 'occurredAt' })]),
+    );
+    await expect(validate(utc)).resolves.toHaveLength(0);
+    await expect(validate(offset)).resolves.toHaveLength(0);
   });
 });

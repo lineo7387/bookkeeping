@@ -1,6 +1,7 @@
 import { Transform } from 'class-transformer';
 import { IsISO8601, IsIn, IsOptional, IsString, Length, Matches, MaxLength, MinLength } from 'class-validator';
 import type { TransactionType } from '@bookkeeping/shared-types';
+import { TIMEZONE_AWARE_ISO_DATETIME_PATTERN } from './date-time-validation';
 
 const TRANSACTION_TYPES: TransactionType[] = ['income', 'expense', 'transfer'];
 const TRANSACTION_VISIBILITIES = ['ledger', 'private'] as const;
@@ -19,7 +20,8 @@ export class CreateTransactionDto {
   @Length(3, 3)
   currency?: string = 'CNY';
 
-  @IsISO8601()
+  @IsISO8601({ strict: true })
+  @Matches(TIMEZONE_AWARE_ISO_DATETIME_PATTERN)
   occurredAt!: string;
 
   @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
