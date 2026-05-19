@@ -1,7 +1,8 @@
 import type {
   AiCandidateTransaction,
   AiExtractionSummary,
-  AiTaskStatus,
+  AiTaskDetail,
+  AiTextParseResult,
   AdminAiTaskSummary,
   AdminAuditLogSummary,
   AdminLedgerSummary,
@@ -10,6 +11,7 @@ import type {
   ApiResponse,
   PaginatedItems,
   TransactionVisibility,
+  ConfirmAiExtractionResult,
 } from '@bookkeeping/shared-types';
 
 export interface BookkeepingApiClientOptions {
@@ -26,24 +28,6 @@ export interface AiTextParseRequest {
   defaultCurrency?: string;
 }
 
-export interface AiTextParseResult {
-  taskId: string;
-  ledgerId: string;
-  status: AiTaskStatus;
-  extraction: AiExtractionSummary | null;
-}
-
-export interface AiTaskDetail {
-  id: string;
-  ledgerId: string;
-  type: 'text_parse' | 'receipt_ocr' | 'classify' | 'insight';
-  status: AiTaskStatus;
-  errorMessage: string | null;
-  extraction: AiExtractionSummary | null;
-  createdAt: string;
-  updatedAt: string;
-}
-
 export interface ConfirmAiExtractionRequest {
   ledgerId: string;
   accountId?: string;
@@ -52,12 +36,6 @@ export interface ConfirmAiExtractionRequest {
   occurredAt?: string;
   visibility?: TransactionVisibility;
   note?: string | null;
-}
-
-export interface ConfirmAiExtractionResult {
-  ledgerId: string;
-  transactionId: string;
-  extraction: AiExtractionSummary;
 }
 
 export interface RejectAiExtractionRequest {
@@ -102,6 +80,18 @@ export class BookkeepingApiClient {
     return this.request<AiTaskDetail>(`/ai/tasks/${encodeURIComponent(taskId)}`, {
       method: 'GET',
     });
+  }
+
+  listLedgerAiTasks(
+    ledgerId: string,
+    query: AdminListQuery = {},
+  ): Promise<ApiResponse<PaginatedItems<AiTaskDetail>>> {
+    return this.request<PaginatedItems<AiTaskDetail>>(
+      `/ledgers/${encodeURIComponent(ledgerId)}/ai/tasks${toQueryString(query)}`,
+      {
+        method: 'GET',
+      },
+    );
   }
 
   confirmAiExtraction(
@@ -355,4 +345,12 @@ function toQueryString(query: AdminListQuery): string {
   return value ? `?${value}` : '';
 }
 
-export type { AiCandidateTransaction, AiExtractionSummary, ApiError, ApiResponse };
+export type {
+  AiCandidateTransaction,
+  AiExtractionSummary,
+  AiTaskDetail,
+  AiTextParseResult,
+  ApiError,
+  ApiResponse,
+  ConfirmAiExtractionResult,
+};

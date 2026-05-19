@@ -21,9 +21,8 @@ export class AdminService {
     return this.adminRepository.listLedgers(normalizeQuery(query));
   }
 
-  async listAiTasks(query: ListAdminQueryDto): Promise<PaginatedItems<AdminAiTaskSummary>> {
-    const normalized = normalizeQuery(query);
-    return { items: [], limit: normalized.limit, offset: normalized.offset };
+  listAiTasks(query: ListAdminQueryDto): Promise<PaginatedItems<AdminAiTaskSummary>> {
+    return this.adminRepository.listAiTasks(normalizeQuery(query));
   }
 
   listAuditLogs(query: ListAdminQueryDto): Promise<PaginatedItems<AdminAuditLogSummary>> {

@@ -73,6 +73,26 @@ enum TransactionSource {
   import
 }
 
+enum AiTaskType {
+  text_parse
+  receipt_ocr
+  classify
+  insight
+}
+
+enum AiTaskStatus {
+  pending
+  processing
+  succeeded
+  failed
+}
+
+enum AiExtractionStatus {
+  pending
+  confirmed
+  rejected
+}
+
 model User {
   id                  String        @id @default(uuid())
   email               String        @unique
@@ -87,6 +107,8 @@ model User {
   memberships         LedgerMember[]
   ownedAccounts       Account[]     @relation("AccountOwner")
   createdTransactions Transaction[] @relation("TransactionCreator")
+  aiTasks             AiTask[]
+  aiExtractions       AiExtraction[]
   createdAt           DateTime      @default(now()) @map("created_at")
   updatedAt           DateTime      @updatedAt @map("updated_at")
 
@@ -126,6 +148,8 @@ model Ledger {
   accounts        Account[]
   categories      Category[]
   transactions    Transaction[]
+  aiTasks         AiTask[]
+  aiExtractions   AiExtraction[]
 
   @@index([ownerId])
   @@index([archivedAt])
@@ -247,6 +271,47 @@ model Transaction {
   @@index([createdBy])
   @@index([ledgerId, deletedAt])
   @@map("transactions")
+}
+
+model AiTask {
+  id           String         @id @default(uuid())
+  ledgerId     String         @map("ledger_id")
+  userId       String         @map("user_id")
+  type         AiTaskType
+  status       AiTaskStatus   @default(pending)
+  inputText    String?        @map("input_text")
+  inputFileUrl String?        @map("input_file_url")
+  errorMessage String?        @map("error_message")
+  createdAt    DateTime       @default(now()) @map("created_at")
+  updatedAt    DateTime       @updatedAt @map("updated_at")
+  ledger       Ledger         @relation(fields: [ledgerId], references: [id], onDelete: Cascade)
+  user         User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  extractions  AiExtraction[]
+
+  @@index([ledgerId, status])
+  @@index([userId, createdAt])
+  @@map("ai_tasks")
+}
+
+model AiExtraction {
+  id                   String             @id @default(uuid())
+  aiTaskId             String             @map("ai_task_id")
+  ledgerId             String             @map("ledger_id")
+  userId               String             @map("user_id")
+  rawResult            Json               @map("raw_result") @db.JsonB
+  suggestedTransaction Json               @map("suggested_transaction") @db.JsonB
+  confidence           Decimal            @db.Decimal(5, 4)
+  status               AiExtractionStatus @default(pending)
+  createdAt            DateTime           @default(now()) @map("created_at")
+  updatedAt            DateTime           @updatedAt @map("updated_at")
+  aiTask               AiTask             @relation(fields: [aiTaskId], references: [id], onDelete: Cascade)
+  ledger               Ledger             @relation(fields: [ledgerId], references: [id], onDelete: Cascade)
+  user                 User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([aiTaskId])
+  @@index([ledgerId, status])
+  @@index([userId, status])
+  @@map("ai_extractions")
 }
 
 model AuditLog {

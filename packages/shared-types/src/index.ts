@@ -204,7 +204,7 @@ export interface AdminLedgerSummary {
 export interface AdminAiTaskSummary {
   id: string;
   status: AiTaskStatus;
-  type: string;
+  type: AiTaskType;
   createdAt: string;
   updatedAt: string;
 }
@@ -222,6 +222,8 @@ export interface AdminAuditLogSummary {
 }
 
 export type AiTaskStatus = 'pending' | 'processing' | 'succeeded' | 'failed';
+
+export type AiTaskType = 'text_parse' | 'receipt_ocr' | 'classify' | 'insight';
 
 export type AiExtractionStatus = 'pending' | 'confirmed' | 'rejected';
 
@@ -262,4 +264,29 @@ export interface AiExtractionSummary {
   confidence: number;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface AiTextParseResult {
+  taskId: string;
+  ledgerId: string;
+  status: AiTaskStatus;
+  extraction: AiExtractionSummary | null;
+}
+
+export interface AiTaskDetail {
+  id: string;
+  ledgerId: string;
+  type: AiTaskType;
+  status: AiTaskStatus;
+  errorMessage: string | null;
+  extraction: AiExtractionSummary | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ConfirmAiExtractionResult {
+  ledgerId: string;
+  transactionId: string;
+  extraction: AiExtractionSummary;
+  transaction: TransactionSummary;
 }

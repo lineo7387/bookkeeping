@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import type {
+  AdminAiTaskSummary,
   AdminAuditLogSummary,
   AdminLedgerSummary,
   AdminUserSummary,
@@ -76,6 +77,33 @@ export class AdminRepository {
         archivedAt: ledger.archivedAt?.toISOString() ?? null,
         createdAt: ledger.createdAt.toISOString(),
         updatedAt: ledger.updatedAt.toISOString(),
+      })),
+      limit: query.limit,
+      offset: query.offset,
+    };
+  }
+
+  async listAiTasks(query: Required<ListAdminQueryDto>): Promise<PaginatedItems<AdminAiTaskSummary>> {
+    const tasks = await this.prisma.aiTask.findMany({
+      orderBy: { createdAt: 'desc' },
+      skip: query.offset,
+      take: query.limit,
+      select: {
+        id: true,
+        status: true,
+        type: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+    });
+
+    return {
+      items: tasks.map((task) => ({
+        id: task.id,
+        status: task.status,
+        type: task.type,
+        createdAt: task.createdAt.toISOString(),
+        updatedAt: task.updatedAt.toISOString(),
       })),
       limit: query.limit,
       offset: query.offset,

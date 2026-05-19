@@ -265,6 +265,40 @@ describe('TransactionsService', () => {
     );
   });
 
+  it('creates an internal AI text transaction with source ai_text and balance changes', async () => {
+    policy.canCreateTransaction.mockResolvedValue(true);
+    policy.canViewAccount.mockResolvedValue(true);
+    repository.findActiveAccountById.mockResolvedValue(account);
+    repository.findActiveCategoryById.mockResolvedValue(expenseCategory);
+    repository.createWithBalanceChanges.mockResolvedValue({ ...transaction, source: 'ai_text' });
+
+    await expect(
+      service.createFromAiExtraction('user_1', {
+        ledgerId: 'ledger_1',
+        accountId: 'account_1',
+        categoryId: 'category_1',
+        type: 'expense',
+        amount: '86.00',
+        currency: 'CNY',
+        occurredAt: '2026-05-19T11:00:00.000Z',
+        visibility: 'ledger',
+        merchant: null,
+        note: '晚饭',
+        sourceExtractionId: 'extraction_1',
+      }),
+    ).resolves.toMatchObject({ source: 'ai_text' });
+
+    expect(repository.createWithBalanceChanges).toHaveBeenCalledWith(
+      expect.objectContaining({
+        ledgerId: 'ledger_1',
+        createdBy: 'user_1',
+        source: 'ai_text',
+        metadata: { aiExtractionId: 'extraction_1' },
+      }),
+      [{ accountId: 'account_1', delta: '-86.00' }],
+    );
+  });
+
   it('requires expense and income categories to match the transaction type', async () => {
     policy.canCreateTransaction.mockResolvedValue(true);
     policy.canViewAccount.mockResolvedValue(true);
