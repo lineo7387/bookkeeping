@@ -118,6 +118,59 @@ export interface TransactionSummary {
   updatedAt: string;
 }
 
+export interface MonthlyStatisticsSummary {
+  ledgerId: string;
+  occurredFrom: string | null;
+  occurredTo: string | null;
+  income: string;
+  expense: string;
+  net: string;
+}
+
+export interface CategoryStatisticsItem {
+  categoryId: string | null;
+  categoryName: string | null;
+  amount: string;
+  transactionCount: number;
+  percentage: string;
+}
+
+export interface CategoryStatisticsSummary {
+  ledgerId: string;
+  type: CategoryType;
+  total: string;
+  items: CategoryStatisticsItem[];
+}
+
+export interface AccountBalanceStatisticsItem {
+  accountId: string;
+  accountName: string;
+  type: AccountType;
+  currency: string;
+  currentBalance: string;
+  visibility: AccountVisibility;
+}
+
+export interface AccountBalanceStatisticsSummary {
+  ledgerId: string;
+  totalBalance: string;
+  items: AccountBalanceStatisticsItem[];
+}
+
+export interface MemberExpenseStatisticsItem {
+  userId: string;
+  nickname: string;
+  amount: string;
+  transactionCount: number;
+  percentage: string;
+}
+
+export interface MemberExpenseStatisticsSummary {
+  ledgerId: string;
+  totalExpense: string;
+  items: MemberExpenseStatisticsItem[];
+}
+
 export type AiTaskStatus = 'pending' | 'processing' | 'succeeded' | 'failed';
 
 export type AiExtractionStatus = 'pending' | 'confirmed' | 'rejected';

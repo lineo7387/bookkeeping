@@ -4,7 +4,7 @@
 
 `apps/api` 是 NestJS 主业务服务，是系统唯一对外业务 API。它负责认证、权限、账本协作、账户、分类、流水、统计、附件、AI 任务编排、后台管理和数据一致性。
 
-当前已完成认证与会话、用户资料、账本与成员权限、账户、分类、流水基础闭环，以及 M2 账户余额流水联动。正式流水创建、更新和软删除必须在同一个 Prisma transaction 内调整相关账户余额。
+当前已完成认证与会话、用户资料、账本与成员权限、账户、分类、流水基础闭环、M2 账户余额流水联动，以及基础统计 API。正式流水创建、更新和软删除必须在同一个 Prisma transaction 内调整相关账户余额。
 
 ## 修改前检查
 
@@ -65,7 +65,7 @@ src/
   accounts/
   categories/
   transactions/
-  statistics/             # 后续基础统计
+  statistics/             # 基础统计
   ai/                     # 后续 AI 任务编排，只调用内部 FastAPI
   attachments/            # 后续票据和对象存储
   admin/                  # 后续后台管理 API
