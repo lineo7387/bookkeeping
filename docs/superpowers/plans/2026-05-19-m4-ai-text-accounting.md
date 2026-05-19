@@ -656,9 +656,9 @@ Expected: all commands exit 0.
 - Create after user scaffolding: `apps/ai-service/app/services/text_transaction_parser.py`
 - Create after user scaffolding: `apps/ai-service/tests/test_text_transactions.py`
 
-- [ ] **Step 1: User runs FastAPI scaffold command**
+- [x] **Step 1: User runs FastAPI scaffold command**
 
-User runs:
+User used `uv` to create the FastAPI project. The original pip-based fallback command was:
 
 ```bash
 mkdir -p apps/ai-service/app
@@ -670,21 +670,22 @@ python -m pip install fastapi "uvicorn[standard]" pydantic pydantic-settings htt
 python -m pip freeze > requirements.txt
 ```
 
-Expected: `apps/ai-service/requirements.txt` exists and includes FastAPI, Uvicorn, Pydantic, httpx, and pytest.
+Expected: `apps/ai-service/pyproject.toml` and `apps/ai-service/uv.lock` exist and include FastAPI, Uvicorn, Pydantic, httpx, and pytest.
 
-- [ ] **Step 2: Verify scaffold result**
+- [x] **Step 2: Verify scaffold result**
 
 Run:
 
 ```bash
 test -d apps/ai-service
-test -f apps/ai-service/requirements.txt
-rg -n "fastapi|uvicorn|pydantic|pytest" apps/ai-service/requirements.txt
+test -f apps/ai-service/pyproject.toml
+test -f apps/ai-service/uv.lock
+rg -n "fastapi|uvicorn|pydantic|pytest" apps/ai-service/pyproject.toml
 ```
 
 Expected: all commands exit 0.
 
-- [ ] **Step 3: Write failing FastAPI contract tests**
+- [x] **Step 3: Write failing FastAPI contract tests**
 
 Create `apps/ai-service/tests/test_text_transactions.py` with tests for:
 
@@ -735,33 +736,32 @@ Run:
 
 ```bash
 cd apps/ai-service
-source .venv/bin/activate
-pytest
+uv run pytest
 ```
 
 Expected before implementation: FAIL.
 
-- [ ] **Step 4: Implement minimal deterministic parser**
+- [x] **Step 4: Implement minimal deterministic parser**
 
 Implement a deterministic parser for MVP tests:
 
 - Extract the first decimal or integer amount.
 - Treat text containing `收入` or `工资` as `income`; otherwise default to `expense`.
 - Use request `defaultCurrency`.
-- Use request `timezone` to form a stable ISO output.
+- Use request `timezone` to form an ISO output.
 - Match `categoryName` and `accountHint` by substring from provided context.
+- Map simple meal-related Chinese keywords such as `晚饭` to `餐饮` when that category exists in context.
 - Return low-confidence failed status when no amount exists.
 
 This parser is a local deterministic MVP adapter. Real model provider integration is a later task and must keep the same response contract.
 
-- [ ] **Step 5: Verify FastAPI service**
+- [x] **Step 5: Verify FastAPI service**
 
 Run:
 
 ```bash
 cd apps/ai-service
-source .venv/bin/activate
-pytest
+uv run pytest
 ```
 
 Expected: PASS.
