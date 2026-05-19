@@ -26,6 +26,7 @@ describe('AuthService', () => {
     nickname: 'Lineo',
     avatarUrl: null,
     status: 'active' as const,
+    isSystemAdmin: false,
     createdAt: now,
     updatedAt: now,
   };

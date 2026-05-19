@@ -386,7 +386,7 @@ Completion note on 2026-05-19: audit log foundation completed with Prisma 7 null
 - Create `apps/api/src/admin/system-admin.guard.spec.ts`
 - Modify `packages/shared-types/src/index.ts`
 
-- [ ] **Step 1: Write failing guard test**
+- [x] **Step 1: Write failing guard test**
 
 Create `apps/api/src/admin/system-admin.guard.spec.ts`:
 
@@ -429,7 +429,7 @@ pnpm --filter @bookkeeping/api test -- system-admin.guard.spec.ts
 
 Expected before implementation: FAIL because guard does not exist.
 
-- [ ] **Step 2: Add user admin flag**
+- [x] **Step 2: Add user admin flag**
 
 Modify `apps/api/prisma/schema.prisma`:
 
@@ -449,7 +449,7 @@ pnpm --filter @bookkeeping/api prisma:generate
 
 Expected: Prisma client regenerates successfully.
 
-- [ ] **Step 3: Implement guard**
+- [x] **Step 3: Implement guard**
 
 Create `apps/api/src/admin/system-admin.guard.ts`:
 
@@ -483,7 +483,7 @@ function adminDenied(): ForbiddenException {
 }
 ```
 
-- [ ] **Step 4: Verify guard**
+- [x] **Step 4: Verify guard**
 
 Run:
 
@@ -507,7 +507,7 @@ Expected: commands exit 0.
 - Modify `apps/api/src/app.module.ts`
 - Modify `packages/shared-types/src/index.ts`
 
-- [ ] **Step 1: Write Admin API document**
+- [x] **Step 1: Write Admin API document**
 
 Create `docs/modules/admin/Admin后台接口说明.md` with endpoint list:
 
@@ -531,7 +531,7 @@ Admin 模块提供平台管理员排查问题所需的只读后台接口，第�
 - 返回结果不得包含 password_hash、refresh_token_hash 或私密流水明细。
 ```
 
-- [ ] **Step 2: Write failing service test**
+- [x] **Step 2: Write failing service test**
 
 Create `apps/api/src/admin/admin.service.spec.ts`:
 
@@ -578,7 +578,7 @@ pnpm --filter @bookkeeping/api test -- admin.service.spec.ts
 
 Expected before implementation: FAIL because admin service does not exist.
 
-- [ ] **Step 3: Implement admin read repository**
+- [x] **Step 3: Implement admin read repository**
 
 Implement repository methods:
 
@@ -591,7 +591,7 @@ listAiTasks(query): Promise<{ items: [] }>
 
 First AI tasks endpoint may return an empty list until M4 creates AI task models, but it must be documented as an M3 admin placeholder.
 
-- [ ] **Step 4: Implement controller**
+- [x] **Step 4: Implement controller**
 
 Routes:
 
@@ -609,7 +609,7 @@ Controller class uses:
 @UseGuards(JwtAuthGuard, SystemAdminGuard)
 ```
 
-- [ ] **Step 5: Verify admin API**
+- [x] **Step 5: Verify admin API**
 
 Run:
 
@@ -620,6 +620,8 @@ pnpm --filter @bookkeeping/api build
 ```
 
 Expected: commands exit 0.
+
+Completion note on 2026-05-19: system admin guard and read-only Admin API foundation completed with `users.is_system_admin`, `SystemAdminGuard`, user/ledger/audit-log read models, and an empty M3 AI task placeholder endpoint. Narrow Admin API tests, API typecheck/build, workspace build/test, and `git diff --check` passed before local commit preparation.
 
 ## Task 6: Add Audit Writes To Sensitive Operations
 

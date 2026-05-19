@@ -171,6 +171,56 @@ export interface MemberExpenseStatisticsSummary {
   items: MemberExpenseStatisticsItem[];
 }
 
+export interface PaginatedItems<T> {
+  items: T[];
+  limit: number;
+  offset: number;
+}
+
+export interface AdminUserSummary {
+  id: string;
+  email: string;
+  phone: string | null;
+  nickname: string;
+  status: 'active' | 'disabled';
+  isSystemAdmin: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AdminLedgerSummary {
+  id: string;
+  name: string;
+  type: 'personal' | 'family';
+  ownerId: string;
+  defaultCurrency: string;
+  timezone: string;
+  memberCount: number;
+  archivedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AdminAiTaskSummary {
+  id: string;
+  status: AiTaskStatus;
+  type: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AdminAuditLogSummary {
+  id: string;
+  actorUserId: string | null;
+  ledgerId: string | null;
+  targetType: string;
+  targetId: string | null;
+  action: string;
+  summary: string;
+  metadata: Record<string, unknown> | null;
+  createdAt: string;
+}
+
 export type AiTaskStatus = 'pending' | 'processing' | 'succeeded' | 'failed';
 
 export type AiExtractionStatus = 'pending' | 'confirmed' | 'rejected';

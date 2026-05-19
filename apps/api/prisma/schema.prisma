@@ -81,6 +81,7 @@ model User {
   nickname            String
   avatarUrl           String?       @map("avatar_url")
   status              UserStatus    @default(active)
+  isSystemAdmin       Boolean       @default(false) @map("is_system_admin")
   sessions            UserSession[]
   ownedLedgers        Ledger[]      @relation("LedgerOwner")
   memberships         LedgerMember[]
