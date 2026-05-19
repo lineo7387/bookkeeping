@@ -49,7 +49,8 @@ pnpm --filter @bookkeeping/api build
 - 后续后台写操作出现后，按独立设计文档接入审计日志。
 - 增加认证 E2E 测试和真实数据库集成测试。
 - 增加邀请链接和邀请接受流程。
-- 增加余额重算、AI 任务编排模块。
+- 增加余额重算。
+- M4 AI 文本记账按 `docs/modules/ai/AI文本记账说明.md` 和 `docs/superpowers/plans/2026-05-19-m4-ai-text-accounting.md` 实现：NestJS 负责 AI 任务、候选保存、确认/拒绝和正式流水创建，FastAPI 只返回候选结果。
 
 ## M1/M1.5 模块文档
 
@@ -61,3 +62,4 @@ pnpm --filter @bookkeeping/api build
 - `docs/modules/statistics/基础统计说明.md`
 - `docs/modules/audit-logs/审计日志说明.md`
 - `docs/modules/admin/Admin后台接口说明.md`
+- `docs/modules/ai/AI文本记账说明.md`
