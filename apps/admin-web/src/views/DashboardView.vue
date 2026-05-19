@@ -1,20 +1,22 @@
 <script setup lang="ts">
+import { computed, onMounted } from 'vue'
 import {
   Bell,
   Bot,
-  ChartPie,
   CircleDollarSign,
-  ClipboardCheck,
   DatabaseZap,
   Home,
+  RefreshCw,
   Search,
   ShieldCheck,
   Users,
 } from 'lucide-vue-next'
+import { useAdminDashboard } from '../composables/useAdminDashboard'
 import ActivityPanel from '../components/dashboard/ActivityPanel.vue'
 import StatCard from '../components/dashboard/StatCard.vue'
 import TaskPanel from '../components/dashboard/TaskPanel.vue'
 import ClayButton from '../components/ui/ClayButton.vue'
+import type { DashboardStatItem } from '../services/adminDashboard'
 
 const navItems = [
   { label: '总览', icon: Home, active: true },
@@ -24,60 +26,37 @@ const navItems = [
   { label: '审计', icon: ShieldCheck, active: false },
 ]
 
-const stats = [
-  {
-    label: '本月流水',
-    value: '12,486',
-    hint: '较上月 +18%',
-    tone: 'violet' as const,
-    icon: ChartPie,
-  },
-  {
-    label: '活跃账本',
-    value: '326',
-    hint: '家庭账本 214',
-    tone: 'blue' as const,
-    icon: Users,
-  },
-  {
-    label: 'AI候选',
-    value: '89',
-    hint: '待确认 17',
-    tone: 'pink' as const,
-    icon: Bot,
-  },
-  {
-    label: '系统健康',
-    value: '99.9%',
-    hint: 'Redis/PostgreSQL 正常',
-    tone: 'green' as const,
-    icon: DatabaseZap,
-  },
-]
+const statIcons = {
+  users: Users,
+  ledgers: CircleDollarSign,
+  aiTasks: Bot,
+  auditLogs: DatabaseZap,
+} satisfies Record<DashboardStatItem['key'], typeof Users>
 
-const tasks = [
-  {
-    title: '票据 OCR 队列',
-    detail: '3 个任务等待重试，建议检查图片解析日志。',
-    status: 'warning' as const,
-  },
-  {
-    title: '家庭账本邀请',
-    detail: '12 个邀请将在 24 小时内过期。',
-    status: 'info' as const,
-  },
-  {
-    title: '权限策略文档',
-    detail: 'ledger_members Policy 需要在 M1 前细化。',
-    status: 'success' as const,
-  },
-]
+const { viewModel, isLoading, errorMessage, lastLoadedAt, refresh } = useAdminDashboard()
 
-const activities = [
-  { actor: '系统', action: '生成 AI 候选流水', time: '2 分钟前' },
-  { actor: '管理员', action: '查看家庭账本审计日志', time: '18 分钟前' },
-  { actor: '用户服务', action: '刷新成员权限缓存', time: '42 分钟前' },
-]
+const stats = computed(() =>
+  viewModel.value.stats.map((stat) => ({
+    ...stat,
+    icon: statIcons[stat.key],
+  })),
+)
+
+const lastLoadedLabel = computed(() => {
+  if (!lastLoadedAt.value) {
+    return '尚未加载'
+  }
+
+  return new Intl.DateTimeFormat('zh-CN', {
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+  }).format(new Date(lastLoadedAt.value))
+})
+
+onMounted(() => {
+  void refresh()
+})
 </script>
 
 <template>
@@ -108,46 +87,38 @@ const activities = [
     <main class="grid min-w-0 content-start gap-5">
       <header class="topbar flex min-h-[76px] items-center justify-between gap-4 rounded-[28px] border border-white/70 px-5 py-4 max-[860px]:flex-col max-[860px]:items-start">
         <div>
-          <p class="m-0 text-xs font-bold text-[var(--clay-muted)]">M0 工程底座</p>
+          <p class="m-0 text-xs font-bold text-[var(--clay-muted)]">M3 后台只读 API</p>
           <h2 class="m-0 font-['Nunito'] text-[34px] font-black text-[var(--clay-foreground)] max-[560px]:text-[28px]">运营总览</h2>
         </div>
         <div class="flex flex-wrap justify-end gap-3 max-[860px]:w-full max-[860px]:justify-stretch">
           <label class="search-box flex min-h-11 min-w-[260px] items-center gap-2 rounded-2xl px-4 text-sm text-[var(--clay-muted)] max-[560px]:w-full max-[560px]:min-w-0">
             <Search :size="18" aria-hidden="true" />
-            <span>搜索用户、账本或 AI 任务</span>
+            <span>Admin API · 最近加载 {{ lastLoadedLabel }}</span>
           </label>
           <ClayButton variant="secondary" aria-label="查看通知">
             <Bell :size="20" aria-hidden="true" />
           </ClayButton>
-          <ClayButton>
-            <ClipboardCheck :size="20" aria-hidden="true" />
-            <span>处理任务</span>
+          <ClayButton :disabled="isLoading" @click="refresh">
+            <RefreshCw :size="20" aria-hidden="true" :class="{ 'animate-spin': isLoading }" />
+            <span>{{ isLoading ? '加载中' : '刷新数据' }}</span>
           </ClayButton>
         </div>
       </header>
 
       <section class="status-panel grid grid-cols-[minmax(0,1fr)_280px] gap-5 rounded-[28px] border border-white/70 p-5 max-[860px]:grid-cols-1" aria-labelledby="hero-title">
         <div class="grid content-center gap-3">
-          <p class="m-0 text-xs font-bold text-[var(--clay-muted)]">家庭共享账本 · AI 候选确认 · 私密流水</p>
+          <p class="m-0 text-xs font-bold text-[var(--clay-muted)]">用户 · 账本 · AI 任务 · 审计日志</p>
           <h2 id="hero-title" class="m-0 max-w-[720px] font-['Nunito'] text-[30px] leading-tight font-black text-[var(--clay-foreground)] max-[560px]:text-2xl">
-            今日需要关注 3 类运营事项
+            {{ errorMessage ? 'Admin API 连接需要检查' : '后台已接入真实只读数据' }}
           </h2>
           <p class="m-0 max-w-[720px] text-base font-medium text-[var(--clay-muted)]">
-            AI 队列、账本邀请和权限文档是当前 M0 阶段的主要关注点。后续模块会按中文文档逐步接入真实接口。
+            {{ errorMessage ?? '页面通过 @bookkeeping/api-client 访问 NestJS Admin API，当前展示首屏分页样本，不直接访问 FastAPI 或内部服务。' }}
           </p>
         </div>
         <div class="status-stack grid gap-3">
-          <div class="status-row">
-            <span class="status-dot status-dot-green" />
-            <span>API build/typecheck 通过</span>
-          </div>
-          <div class="status-row">
-            <span class="status-dot status-dot-blue" />
-            <span>PostgreSQL / Redis 已预留配置</span>
-          </div>
-          <div class="status-row">
-            <span class="status-dot status-dot-violet" />
-            <span>AI 候选确认流程已规范</span>
+          <div v-for="item in viewModel.healthItems" :key="item.label" class="status-row">
+            <span class="status-dot" :class="`status-dot-${item.tone}`" />
+            <span>{{ item.label }}</span>
           </div>
         </div>
       </section>
@@ -165,8 +136,8 @@ const activities = [
       </section>
 
       <section class="grid grid-cols-[minmax(0,1.1fr)_minmax(320px,0.9fr)] gap-6 max-[860px]:grid-cols-1">
-        <TaskPanel :tasks="tasks" />
-        <ActivityPanel :activities="activities" />
+        <TaskPanel :tasks="viewModel.tasks" />
+        <ActivityPanel :activities="viewModel.activities" />
       </section>
     </main>
   </div>

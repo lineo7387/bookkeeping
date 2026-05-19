@@ -44,4 +44,10 @@ withDefaults(
   box-shadow: var(--clay-shadow-pressed);
   transform: scale(0.94);
 }
+
+.clay-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.68;
+  transform: none;
+}
 </style>

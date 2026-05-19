@@ -60,9 +60,9 @@
 
 - 已初始化 pnpm workspace。
 - `apps/api` 已完成 M1、M1.5、M2 账户余额流水联动，以及 M3 基础统计 API、审计日志基础写入与业务接入能力和后台只读 Admin API 基础能力：认证、会话、用户资料、账本、成员角色、Ledger Policy、账户、分类、流水基础闭环、正式流水联动账户余额、月度收支、分类占比、账户余额统计、成员消费统计、`audit_logs` Prisma 模型、`AuditLogsModule`、账本/成员/账户/分类/流水写操作审计、`users.is_system_admin`、`SystemAdminGuard`、只读 Admin API、Repository、Service 和对应单元测试。
-- `apps/admin-web` 已创建 Vue 3 后台首页，当前使用静态数据，尚未接入真实 API。
+- `apps/admin-web` 已创建 Vue 3 后台首页，并已通过 `@bookkeeping/api-client` 接入 M3 后台只读 Admin API，展示用户、账本、AI 任务占位和审计日志首屏分页样本。
 - `packages/shared-types` 已补充账户、分类、流水摘要、交易来源和基础统计响应类型。
-- `packages/api-client` 已创建面向 NestJS 对外 API 的轻量请求客户端。
+- `packages/api-client` 已创建面向 NestJS 对外 API 的轻量请求客户端，当前封装 AI 候选相关入口和 M3 Admin 只读列表入口。
 - `apps/ai-service`、`apps/mobile`、`packages/validation`、`packages/config` 尚未创建代码脚手架。
 
 ## 新对话建议
@@ -74,4 +74,4 @@ git status --short --branch
 git log --oneline -8
 ```
 
-`main` 已完成 M2 账户余额流水联动、M3 基础统计 API、M3 审计日志基础写入能力，并已提交 M3 后续计划 `docs/superpowers/plans/2026-05-19-m3-statistics-admin-audit.md`。当前工作区继续完成了后台只读 Admin API 基础能力，以及账本、成员、账户、分类和流水成功写操作的审计日志业务接入。后台 Web 尚未接入真实 API。严格按路线继续时，下一步可进入 M3 后台 Web 真实 Admin API 接入；AI 文本记账属于 M4，暂不提前实现。开始新功能前应先补或读取对应中文模块文档。
+`main` 已完成 M2 账户余额流水联动、M3 基础统计 API、M3 审计日志基础写入能力，并已提交 M3 后续计划 `docs/superpowers/plans/2026-05-19-m3-statistics-admin-audit.md`。当前工作区继续完成了后台只读 Admin API 基础能力、账本/成员/账户/分类/流水成功写操作审计日志业务接入，以及后台 Web 接真实 Admin API。严格按路线继续时，AI 文本记账属于 M4，暂不提前实现；开始新功能前应先补或读取对应中文模块文档。

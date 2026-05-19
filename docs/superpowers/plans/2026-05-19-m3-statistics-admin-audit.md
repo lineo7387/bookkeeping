@@ -24,10 +24,10 @@ M3 route scope from project docs:
 
 Current state:
 
-- 基础统计 API 已在当前工作区完成首版，但尚未提交。
-- 后台 Web 仍是静态首页。
-- Prisma schema 尚未包含 `audit_logs`。
-- 项目尚未定义系统管理员角色；M3 首版后台管理需要先选定最小权限模型。
+- 基础统计 API 已完成并本地提交。
+- 后台 Web 已通过 `@bookkeeping/api-client` 接入 M3 后台只读 Admin API，展示用户、账本、AI 任务占位和审计日志首屏分页样本。
+- Prisma schema 已包含 `audit_logs`。
+- 项目已通过 `users.is_system_admin` 和 `SystemAdminGuard` 定义 M3 首版系统管理员权限模型。
 
 M3 first-version decision:
 
@@ -728,7 +728,7 @@ Completion note on 2026-05-19: audit writes were added for ledger, member, accou
 - Modify relevant `apps/admin-web/src/*` files after inspecting actual structure
 - Modify `docs/modules/admin-web/后台Web说明.md`
 
-- [ ] **Step 1: Inspect admin-web structure**
+- [x] **Step 1: Inspect admin-web structure**
 
 Run:
 
@@ -738,7 +738,7 @@ rg --files apps/admin-web/src packages/api-client/src | sort
 
 Expected: see actual Vue components and API client entrypoints.
 
-- [ ] **Step 2: Add API client methods**
+- [x] **Step 2: Add API client methods**
 
 Add methods to `BookkeepingApiClient`:
 
@@ -752,13 +752,14 @@ listAdminAiTasks(query?: { limit?: number; offset?: number })
 Run:
 
 ```bash
+pnpm --filter @bookkeeping/api-client test
 pnpm --filter @bookkeeping/api-client typecheck
 pnpm --filter @bookkeeping/api-client build
 ```
 
 Expected: commands exit 0.
 
-- [ ] **Step 3: Replace static admin dashboard data**
+- [x] **Step 3: Replace static admin dashboard data**
 
 Use Vue 3 Composition API. The page should:
 
@@ -767,7 +768,7 @@ Use Vue 3 Composition API. The page should:
 - never call FastAPI
 - keep current `designer.md` visual direction
 
-- [ ] **Step 4: Verify frontend**
+- [x] **Step 4: Verify frontend**
 
 Run:
 
@@ -790,7 +791,7 @@ Expected: commands exit 0.
 - Modify `docs/modules/api/NestJS服务说明.md`
 - Modify `docs/modules/shared-packages/共享包说明.md`
 
-- [ ] **Step 1: Update current state docs**
+- [x] **Step 1: Update current state docs**
 
 Document:
 
@@ -800,7 +801,7 @@ Document:
 - admin-web connected to real NestJS API if Task 7 is completed
 - AI remains M4 and must not be implemented in M3 except admin placeholder listing
 
-- [ ] **Step 2: Run final verification**
+- [x] **Step 2: Run final verification**
 
 Run:
 
@@ -810,6 +811,7 @@ pnpm --filter @bookkeeping/api prisma:generate
 pnpm --filter @bookkeeping/api test
 pnpm --filter @bookkeeping/api typecheck
 pnpm --filter @bookkeeping/api build
+pnpm --filter @bookkeeping/api-client test
 pnpm --filter @bookkeeping/api-client build
 pnpm --filter @bookkeeping/admin-web build
 pnpm build
@@ -819,7 +821,7 @@ git diff --check
 
 Expected: all commands exit 0.
 
-- [ ] **Step 3: Commit M3 completion**
+- [x] **Step 3: Commit M3 completion**
 
 Run:
 
