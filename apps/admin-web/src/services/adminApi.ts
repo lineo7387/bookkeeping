@@ -1,4 +1,4 @@
-import { createApiClient, type BookkeepingApiClient } from '@bookkeeping/api-client'
+import type { BookkeepingApiClient } from '@bookkeeping/api-client'
 import type {
   AdminAiTaskSummary,
   AdminAuditLogSummary,
@@ -7,8 +7,7 @@ import type {
   ApiResponse,
   PaginatedItems,
 } from '@bookkeeping/shared-types'
-
-const adminAccessTokenStorageKey = 'bookkeeping_admin_access_token'
+import { adminApiClient } from './apiClient'
 
 export interface AdminDashboardData {
   users: PaginatedItems<AdminUserSummary>
@@ -16,12 +15,6 @@ export interface AdminDashboardData {
   aiTasks: PaginatedItems<AdminAiTaskSummary>
   auditLogs: PaginatedItems<AdminAuditLogSummary>
 }
-
-export const adminApiClient = createApiClient({
-  baseUrl: import.meta.env.VITE_API_BASE_URL ?? '/api',
-  fetch: globalThis.fetch.bind(globalThis),
-  getAccessToken: () => globalThis.localStorage?.getItem(adminAccessTokenStorageKey),
-})
 
 export async function fetchAdminDashboardData(
   client: BookkeepingApiClient = adminApiClient,
