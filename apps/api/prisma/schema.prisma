@@ -247,3 +247,22 @@ model Transaction {
   @@index([ledgerId, deletedAt])
   @@map("transactions")
 }
+
+model AuditLog {
+  id          String   @id @default(uuid())
+  actorUserId String?  @map("actor_user_id")
+  ledgerId    String?  @map("ledger_id")
+  targetType  String   @map("target_type")
+  targetId    String?  @map("target_id")
+  action      String
+  summary     String
+  metadata    Json?    @db.JsonB
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@index([actorUserId])
+  @@index([ledgerId])
+  @@index([targetType, targetId])
+  @@index([action])
+  @@index([createdAt])
+  @@map("audit_logs")
+}

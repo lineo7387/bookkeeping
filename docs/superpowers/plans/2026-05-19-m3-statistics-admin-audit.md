@@ -128,7 +128,7 @@ Expected: commit succeeds locally. Do not push.
 - Modify `apps/api/prisma/schema.prisma`
 - Modify `docs/handover/开发交接说明.md`
 
-- [ ] **Step 1: Write the Chinese module document**
+- [x] **Step 1: Write the Chinese module document**
 
 Create `docs/modules/audit-logs/审计日志说明.md` with:
 
@@ -172,7 +172,7 @@ pnpm --filter @bookkeeping/api typecheck
 pnpm --filter @bookkeeping/api build
 ```
 
-- [ ] **Step 2: Add failing Prisma/schema-oriented test**
+- [x] **Step 2: Add failing Prisma/schema-oriented test**
 
 Create `apps/api/src/audit-logs/audit-logs.service.spec.ts`:
 
@@ -223,7 +223,7 @@ pnpm --filter @bookkeeping/api test -- audit-logs.service.spec.ts
 
 Expected before implementation: FAIL because `AuditLogsService` does not exist.
 
-- [ ] **Step 3: Add Prisma model**
+- [x] **Step 3: Add Prisma model**
 
 Modify `apps/api/prisma/schema.prisma`:
 
@@ -265,7 +265,7 @@ Expected: Prisma client regenerates successfully.
 - Modify `apps/api/src/app.module.ts`
 - Test `apps/api/src/audit-logs/audit-logs.service.spec.ts`
 
-- [ ] **Step 1: Implement repository**
+- [x] **Step 1: Implement repository**
 
 Create `apps/api/src/audit-logs/audit-logs.repository.ts`:
 
@@ -315,7 +315,7 @@ export class AuditLogsRepository {
 }
 ```
 
-- [ ] **Step 2: Implement service sanitization**
+- [x] **Step 2: Implement service sanitization**
 
 Create `apps/api/src/audit-logs/audit-logs.service.ts`:
 
@@ -346,7 +346,7 @@ function sanitizeMetadata(metadata: Record<string, unknown> | null | undefined):
 }
 ```
 
-- [ ] **Step 3: Create module and import it**
+- [x] **Step 3: Create module and import it**
 
 Create `apps/api/src/audit-logs/audit-logs.module.ts`:
 
@@ -364,7 +364,7 @@ export class AuditLogsModule {}
 
 Modify `apps/api/src/app.module.ts` and add `AuditLogsModule` to imports.
 
-- [ ] **Step 4: Verify GREEN**
+- [x] **Step 4: Verify GREEN**
 
 Run:
 
@@ -374,6 +374,8 @@ pnpm --filter @bookkeeping/api typecheck
 ```
 
 Expected: commands exit 0.
+
+Completion note on 2026-05-19: audit log foundation completed with Prisma 7 nullable JSON handling through `Prisma.JsonNull`; narrow service test and API typecheck passed before final package/workspace verification.
 
 ## Task 4: System Admin Guard And Shared Types
 
