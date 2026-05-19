@@ -1,8 +1,9 @@
 import { BadRequestException, ForbiddenException } from '@nestjs/common';
 import type { CategorySummary } from '@bookkeeping/shared-types';
+import { AuditLogsService } from '../audit-logs/audit-logs.service';
+import { LedgerPolicyService } from '../policies/ledger-policy.service';
 import { CategoriesRepository } from './categories.repository';
 import { CategoriesService } from './categories.service';
-import { LedgerPolicyService } from '../policies/ledger-policy.service';
 
 type CategoriesRepositoryMock = jest.Mocked<
   Pick<
@@ -16,6 +17,7 @@ type CategoriesRepositoryMock = jest.Mocked<
 describe('CategoriesService', () => {
   let repository: CategoriesRepositoryMock;
   let policy: jest.Mocked<Pick<LedgerPolicyService, 'canViewLedger' | 'canManageLedger'>>;
+  let auditLogsService: jest.Mocked<Pick<AuditLogsService, 'record'>>;
   let service: CategoriesService;
 
   const categorySummary: CategorySummary = {
@@ -46,9 +48,13 @@ describe('CategoriesService', () => {
       canViewLedger: jest.fn(),
       canManageLedger: jest.fn(),
     };
+    auditLogsService = {
+      record: jest.fn().mockResolvedValue({ id: 'audit_1' }),
+    };
     service = new CategoriesService(
       repository as unknown as CategoriesRepository,
       policy as unknown as LedgerPolicyService,
+      auditLogsService as unknown as AuditLogsService,
     );
     repository.findActiveForUser.mockImplementation((_userId, categoryId) => repository.findActiveById(categoryId));
   });
@@ -141,6 +147,34 @@ describe('CategoriesService', () => {
       parentId: 'category_parent',
       sortOrder: 20,
     });
+  });
+
+  it('records an audit log after creating a category', async () => {
+    policy.canManageLedger.mockResolvedValue(true);
+    repository.create.mockResolvedValue(categorySummary);
+
+    await service.createCategory('user_1', 'ledger_1', {
+      type: 'expense',
+      name: '餐饮',
+      icon: 'utensils',
+      color: '#F59E0B',
+    });
+
+    expect(auditLogsService.record).toHaveBeenCalledWith(
+      expect.objectContaining({
+        actorUserId: 'user_1',
+        ledgerId: 'ledger_1',
+        targetType: 'category',
+        targetId: 'category_1',
+        action: 'category.create',
+        metadata: expect.objectContaining({
+          type: 'expense',
+          name: '餐饮',
+          icon: 'utensils',
+          color: '#F59E0B',
+        }),
+      }),
+    );
   });
 
   it('does not allow a category to use itself as parent', async () => {
@@ -255,6 +289,30 @@ describe('CategoriesService', () => {
       name: '早餐',
       sortOrder: 20,
     });
+  });
+
+  it('records an audit log after updating a category', async () => {
+    policy.canManageLedger.mockResolvedValue(true);
+    repository.findActiveById.mockResolvedValue(categorySummary);
+    repository.update.mockResolvedValue({ ...categorySummary, name: '早餐', sortOrder: 20 });
+
+    await service.updateCategory('user_1', 'category_1', { name: '早餐', sortOrder: 20 });
+
+    expect(auditLogsService.record).toHaveBeenCalledWith(
+      expect.objectContaining({
+        actorUserId: 'user_1',
+        ledgerId: 'ledger_1',
+        targetType: 'category',
+        targetId: 'category_1',
+        action: 'category.update',
+        metadata: expect.objectContaining({
+          name: '早餐',
+          previousName: '餐饮',
+          sortOrder: 20,
+          previousSortOrder: 10,
+        }),
+      }),
+    );
   });
 
   it('rejects update when the category is missing or archived', async () => {
@@ -377,5 +435,28 @@ describe('CategoriesService', () => {
 
     expect(policy.canManageLedger).toHaveBeenCalledWith('user_1', 'ledger_1');
     expect(repository.archive).toHaveBeenCalledWith('category_1');
+  });
+
+  it('records an audit log after archiving a category', async () => {
+    policy.canManageLedger.mockResolvedValue(true);
+    repository.findActiveById.mockResolvedValue(categorySummary);
+    repository.hasActiveChildren.mockResolvedValue(false);
+    repository.archive.mockResolvedValue({ archived: true });
+
+    await service.deleteCategory('user_1', 'category_1');
+
+    expect(auditLogsService.record).toHaveBeenCalledWith(
+      expect.objectContaining({
+        actorUserId: 'user_1',
+        ledgerId: 'ledger_1',
+        targetType: 'category',
+        targetId: 'category_1',
+        action: 'category.archive',
+        metadata: expect.objectContaining({
+          type: 'expense',
+          name: '餐饮',
+        }),
+      }),
+    );
   });
 });

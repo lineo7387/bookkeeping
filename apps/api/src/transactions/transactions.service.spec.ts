@@ -1,5 +1,6 @@
 import { BadRequestException, ForbiddenException, NotFoundException } from '@nestjs/common';
 import type { AccountSummary, CategorySummary, TransactionSummary } from '@bookkeeping/shared-types';
+import { AuditLogsService } from '../audit-logs/audit-logs.service';
 import { LedgerPolicyService } from '../policies/ledger-policy.service';
 import { TransactionsRepository } from './transactions.repository';
 import { TransactionsService } from './transactions.service';
@@ -23,6 +24,7 @@ describe('TransactionsService', () => {
       'canViewLedger' | 'canCreateTransaction' | 'canViewAccount' | 'canViewTransaction' | 'canUpdateTransaction'
     >
   >;
+  let auditLogsService: jest.Mocked<Pick<AuditLogsService, 'record'>>;
   let service: TransactionsService;
 
   const account: AccountSummary = {
@@ -90,9 +92,13 @@ describe('TransactionsService', () => {
       canViewTransaction: jest.fn(),
       canUpdateTransaction: jest.fn(),
     };
+    auditLogsService = {
+      record: jest.fn().mockResolvedValue({ id: 'audit_1' }),
+    };
     service = new TransactionsService(
       repository as unknown as TransactionsRepository,
       policy as unknown as LedgerPolicyService,
+      auditLogsService as unknown as AuditLogsService,
     );
   });
 
@@ -224,6 +230,38 @@ describe('TransactionsService', () => {
     expect(repository.createWithBalanceChanges).toHaveBeenCalledWith(
       expect.objectContaining({ type: 'income', amount: '5000.00' }),
       [{ accountId: 'account_1', delta: '5000.00' }],
+    );
+  });
+
+  it('records an audit log after creating a transaction', async () => {
+    policy.canCreateTransaction.mockResolvedValue(true);
+    policy.canViewAccount.mockResolvedValue(true);
+    repository.findActiveAccountById.mockResolvedValue(account);
+    repository.findActiveCategoryById.mockResolvedValue(expenseCategory);
+    repository.createWithBalanceChanges.mockResolvedValue(transaction);
+
+    await service.createTransaction('user_1', 'ledger_1', {
+      type: 'expense',
+      amount: '86.00',
+      occurredAt: '2026-05-18T10:00:00.000Z',
+      accountId: 'account_1',
+      categoryId: 'category_1',
+    });
+
+    expect(auditLogsService.record).toHaveBeenCalledWith(
+      expect.objectContaining({
+        actorUserId: 'user_1',
+        ledgerId: 'ledger_1',
+        targetType: 'transaction',
+        targetId: 'transaction_1',
+        action: 'transaction.create',
+        metadata: expect.objectContaining({
+          type: 'expense',
+          amount: '86.00',
+          accountId: 'account_1',
+          categoryId: 'category_1',
+        }),
+      }),
     );
   });
 
@@ -402,6 +440,28 @@ describe('TransactionsService', () => {
       'transaction_1',
       expect.objectContaining({ merchant: '便利店' }),
       [],
+    );
+  });
+
+  it('records an audit log after updating a transaction', async () => {
+    policy.canUpdateTransaction.mockResolvedValue(true);
+    repository.findActiveById.mockResolvedValue(transaction);
+    repository.updateWithBalanceChanges.mockResolvedValue({ ...transaction, amount: '120.00' });
+
+    await service.updateTransaction('user_1', 'transaction_1', { amount: '120.00' });
+
+    expect(auditLogsService.record).toHaveBeenCalledWith(
+      expect.objectContaining({
+        actorUserId: 'user_1',
+        ledgerId: 'ledger_1',
+        targetType: 'transaction',
+        targetId: 'transaction_1',
+        action: 'transaction.update',
+        metadata: expect.objectContaining({
+          amount: '120.00',
+          previousAmount: '86.00',
+        }),
+      }),
     );
   });
 
@@ -644,6 +704,28 @@ describe('TransactionsService', () => {
     expect(repository.softDeleteWithBalanceChanges).toHaveBeenCalledWith('transaction_1', expect.any(Date), [
       { accountId: 'account_1', delta: '86.00' },
     ]);
+  });
+
+  it('records an audit log after deleting a transaction', async () => {
+    policy.canUpdateTransaction.mockResolvedValue(true);
+    repository.findActiveById.mockResolvedValue(transaction);
+    repository.softDeleteWithBalanceChanges.mockResolvedValue({ deleted: true });
+
+    await service.deleteTransaction('user_1', 'transaction_1');
+
+    expect(auditLogsService.record).toHaveBeenCalledWith(
+      expect.objectContaining({
+        actorUserId: 'user_1',
+        ledgerId: 'ledger_1',
+        targetType: 'transaction',
+        targetId: 'transaction_1',
+        action: 'transaction.delete',
+        metadata: expect.objectContaining({
+          amount: '86.00',
+          accountId: 'account_1',
+        }),
+      }),
+    );
   });
 
   it('uses non-leaky not found behavior when delete policy denies access', async () => {

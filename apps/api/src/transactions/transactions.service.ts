@@ -5,6 +5,7 @@ import type {
   TransactionSummary,
   TransactionType,
 } from '@bookkeeping/shared-types';
+import { AuditLogsService } from '../audit-logs/audit-logs.service';
 import { fail } from '../common/api-response';
 import { LedgerPolicyService } from '../policies/ledger-policy.service';
 import type { CreateTransactionDto } from './dto/create-transaction.dto';
@@ -22,6 +23,7 @@ export class TransactionsService {
   constructor(
     private readonly transactionsRepository: TransactionsRepository,
     private readonly ledgerPolicyService: LedgerPolicyService,
+    private readonly auditLogsService: AuditLogsService,
   ) {}
 
   async listTransactions(
@@ -72,7 +74,7 @@ export class TransactionsService {
       metadata: metadata?.value ?? null,
     };
 
-    return this.transactionsRepository.createWithBalanceChanges(
+    const created = await this.transactionsRepository.createWithBalanceChanges(
       createData,
       buildBalanceChanges({
         accountId: createData.accountId,
@@ -81,6 +83,26 @@ export class TransactionsService {
         transferTargetAccountId: metadata?.value.transferTargetAccountId,
       }),
     );
+
+    await this.auditLogsService.record({
+      actorUserId: userId,
+      ledgerId,
+      targetType: 'transaction',
+      targetId: created.id,
+      action: 'transaction.create',
+      summary: 'Created transaction',
+      metadata: {
+        type: created.type,
+        amount: created.amount,
+        currency: created.currency,
+        accountId: created.accountId,
+        categoryId: created.categoryId,
+        visibility: created.visibility,
+        source: created.source,
+      },
+    });
+
+    return created;
   }
 
   async getTransaction(userId: string, transactionId: string): Promise<TransactionSummary> {
@@ -170,6 +192,29 @@ export class TransactionsService {
       throw transactionNotFound();
     }
 
+    await this.auditLogsService.record({
+      actorUserId: userId,
+      ledgerId: transaction.ledgerId,
+      targetType: 'transaction',
+      targetId: transactionId,
+      action: 'transaction.update',
+      summary: 'Updated transaction',
+      metadata: {
+        type: updated.type,
+        previousType: transaction.type,
+        amount: updated.amount,
+        previousAmount: transaction.amount,
+        currency: updated.currency,
+        previousCurrency: transaction.currency,
+        accountId: updated.accountId,
+        previousAccountId: transaction.accountId,
+        categoryId: updated.categoryId,
+        previousCategoryId: transaction.categoryId,
+        visibility: updated.visibility,
+        previousVisibility: transaction.visibility,
+      },
+    });
+
     return updated;
   }
 
@@ -184,6 +229,23 @@ export class TransactionsService {
     if (!deleted) {
       throw transactionNotFound();
     }
+
+    await this.auditLogsService.record({
+      actorUserId: userId,
+      ledgerId: transaction.ledgerId,
+      targetType: 'transaction',
+      targetId: transactionId,
+      action: 'transaction.delete',
+      summary: 'Deleted transaction',
+      metadata: {
+        type: transaction.type,
+        amount: transaction.amount,
+        currency: transaction.currency,
+        accountId: transaction.accountId,
+        categoryId: transaction.categoryId,
+        visibility: transaction.visibility,
+      },
+    });
 
     return deleted;
   }

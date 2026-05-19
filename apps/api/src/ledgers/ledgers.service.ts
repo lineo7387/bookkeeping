@@ -1,5 +1,6 @@
 import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import type { LedgerSummary } from '@bookkeeping/shared-types';
+import { AuditLogsService } from '../audit-logs/audit-logs.service';
 import { fail } from '../common/api-response';
 import { LedgerPolicyService } from '../policies/ledger-policy.service';
 import type { CreateLedgerDto } from './dto/create-ledger.dto';
@@ -12,10 +13,21 @@ export class LedgersService {
   constructor(
     private readonly ledgersRepository: LedgersRepository,
     private readonly ledgerPolicyService: LedgerPolicyService,
+    private readonly auditLogsService: AuditLogsService,
   ) {}
 
-  createLedger(userId: string, dto: CreateLedgerDto): Promise<LedgerSummary> {
-    return this.ledgersRepository.createWithOwner(userId, dto);
+  async createLedger(userId: string, dto: CreateLedgerDto): Promise<LedgerSummary> {
+    const ledger = await this.ledgersRepository.createWithOwner(userId, dto);
+    await this.auditLogsService.record({
+      actorUserId: userId,
+      ledgerId: ledger.id,
+      targetType: 'ledger',
+      targetId: ledger.id,
+      action: 'ledger.create',
+      summary: 'Created ledger',
+      metadata: ledgerAuditMetadata(ledger),
+    });
+    return ledger;
   }
 
   listLedgers(userId: string): Promise<LedgerSummary[]> {
@@ -37,6 +49,15 @@ export class LedgersService {
     if (!ledger) {
       throw ledgerNotFound();
     }
+    await this.auditLogsService.record({
+      actorUserId: userId,
+      ledgerId,
+      targetType: 'ledger',
+      targetId: ledgerId,
+      action: 'ledger.update',
+      summary: 'Updated ledger',
+      metadata: ledgerAuditMetadata(ledger),
+    });
     return ledger;
   }
 
@@ -46,7 +67,17 @@ export class LedgersService {
     if (member?.role !== 'owner') {
       throw roleDenied();
     }
-    return this.ledgersRepository.archiveLedger(ledgerId);
+    const archived = await this.ledgersRepository.archiveLedger(ledgerId);
+    await this.auditLogsService.record({
+      actorUserId: userId,
+      ledgerId,
+      targetType: 'ledger',
+      targetId: ledgerId,
+      action: 'ledger.archive',
+      summary: 'Archived ledger',
+      metadata: { ownerMemberId: member.id },
+    });
+    return archived;
   }
 
   async listMembers(userId: string, ledgerId: string): Promise<LedgerMemberSummary[]> {
@@ -68,7 +99,21 @@ export class LedgersService {
     if (member.role === 'owner') {
       throw roleDenied();
     }
-    return this.ledgersRepository.updateMemberRole(memberId, dto.role);
+    const updated = await this.ledgersRepository.updateMemberRole(memberId, dto.role);
+    await this.auditLogsService.record({
+      actorUserId: userId,
+      ledgerId,
+      targetType: 'ledger_member',
+      targetId: memberId,
+      action: 'member.role.update',
+      summary: 'Updated member role',
+      metadata: {
+        userId: updated.userId,
+        previousRole: member.role,
+        role: updated.role,
+      },
+    });
+    return updated;
   }
 
   async removeMember(userId: string, ledgerId: string, memberId: string): Promise<LedgerMemberSummary> {
@@ -80,7 +125,21 @@ export class LedgersService {
     if (member.role === 'owner') {
       throw roleDenied();
     }
-    return this.ledgersRepository.removeMember(memberId);
+    const removed = await this.ledgersRepository.removeMember(memberId);
+    await this.auditLogsService.record({
+      actorUserId: userId,
+      ledgerId,
+      targetType: 'ledger_member',
+      targetId: memberId,
+      action: 'member.remove',
+      summary: 'Removed member',
+      metadata: {
+        userId: removed.userId,
+        previousRole: member.role,
+        status: removed.status,
+      },
+    });
+    return removed;
   }
 
   private async requireView(userId: string, ledgerId: string): Promise<void> {
@@ -104,4 +163,13 @@ function roleDenied(): ForbiddenException {
 
 function ledgerNotFound(): NotFoundException {
   return new NotFoundException(fail('LEDGER_NOT_FOUND', 'Ledger not found'));
+}
+
+function ledgerAuditMetadata(ledger: LedgerSummary): Record<string, unknown> {
+  return {
+    name: ledger.name,
+    type: ledger.type,
+    defaultCurrency: ledger.defaultCurrency,
+    timezone: ledger.timezone,
+  };
 }

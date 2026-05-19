@@ -636,7 +636,7 @@ Completion note on 2026-05-19: system admin guard and read-only Admin API founda
 - Modify `apps/api/src/transactions/transactions.service.ts`
 - Modify corresponding `*.service.spec.ts`
 
-- [ ] **Step 1: Write failing transaction audit test**
+- [x] **Step 1: Write failing transaction audit test**
 
 Add to `apps/api/src/transactions/transactions.service.spec.ts`:
 
@@ -679,11 +679,11 @@ pnpm --filter @bookkeeping/api test -- transactions.service.spec.ts
 
 Expected before implementation: FAIL because constructor does not accept `AuditLogsService`.
 
-- [ ] **Step 2: Inject AuditLogsModule into business modules**
+- [x] **Step 2: Inject AuditLogsModule into business modules**
 
 Add `AuditLogsModule` imports to ledgers/accounts/categories/transactions modules.
 
-- [ ] **Step 3: Record audit events after successful operations**
+- [x] **Step 3: Record audit events after successful operations**
 
 Add audit calls after successful create/update/delete/archive/member-role operations.
 
@@ -706,7 +706,7 @@ transaction.update
 transaction.delete
 ```
 
-- [ ] **Step 4: Verify all affected service tests**
+- [x] **Step 4: Verify all affected service tests**
 
 Run:
 
@@ -716,6 +716,8 @@ pnpm --filter @bookkeeping/api typecheck
 ```
 
 Expected: commands exit 0.
+
+Completion note on 2026-05-19: audit writes were added for ledger, member, account, category, and transaction successful write operations. The RED check failed on missing `AuditLogsService` constructor injection as expected; after implementation, affected service tests and API typecheck passed before final package/workspace verification.
 
 ## Task 7: Admin Web Connects To Real Admin API
 

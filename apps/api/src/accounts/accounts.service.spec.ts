@@ -1,14 +1,16 @@
 import { ForbiddenException, NotFoundException } from '@nestjs/common';
 import type { AccountSummary } from '@bookkeeping/shared-types';
+import { AuditLogsService } from '../audit-logs/audit-logs.service';
+import { LedgerPolicyService } from '../policies/ledger-policy.service';
 import { AccountsRepository } from './accounts.repository';
 import { AccountsService } from './accounts.service';
-import { LedgerPolicyService } from '../policies/ledger-policy.service';
 
 describe('AccountsService', () => {
   let repository: jest.Mocked<
     Pick<AccountsRepository, 'listVisibleForUser' | 'create' | 'findActiveById' | 'update' | 'archive'>
   >;
   let policy: jest.Mocked<Pick<LedgerPolicyService, 'canViewLedger' | 'canManageLedger' | 'canViewAccount'>>;
+  let auditLogsService: jest.Mocked<Pick<AuditLogsService, 'record'>>;
   let service: AccountsService;
 
   const accountSummary: AccountSummary = {
@@ -39,9 +41,13 @@ describe('AccountsService', () => {
       canManageLedger: jest.fn(),
       canViewAccount: jest.fn(),
     };
+    auditLogsService = {
+      record: jest.fn().mockResolvedValue({ id: 'audit_1' }),
+    };
     service = new AccountsService(
       repository as unknown as AccountsRepository,
       policy as unknown as LedgerPolicyService,
+      auditLogsService as unknown as AuditLogsService,
     );
   });
 
@@ -106,6 +112,35 @@ describe('AccountsService', () => {
     });
   });
 
+  it('records an audit log after creating an account', async () => {
+    policy.canManageLedger.mockResolvedValue(true);
+    repository.create.mockResolvedValue(accountSummary);
+
+    await service.createAccount('user_1', 'ledger_1', {
+      name: '现金',
+      type: 'cash',
+      visibility: 'ledger',
+      initialBalance: '0',
+      currentBalance: '0',
+    });
+
+    expect(auditLogsService.record).toHaveBeenCalledWith(
+      expect.objectContaining({
+        actorUserId: 'user_1',
+        ledgerId: 'ledger_1',
+        targetType: 'account',
+        targetId: 'account_1',
+        action: 'account.create',
+        metadata: expect.objectContaining({
+          name: '现金',
+          type: 'cash',
+          visibility: 'ledger',
+          currentBalance: '0',
+        }),
+      }),
+    );
+  });
+
   it('returns account not found before loading details when account policy denies update access', async () => {
     policy.canViewAccount.mockResolvedValue(false);
 
@@ -150,6 +185,31 @@ describe('AccountsService', () => {
     expect(repository.update).toHaveBeenCalledWith('account_1', { name: '私密现金' });
   });
 
+  it('records an audit log after updating an account', async () => {
+    policy.canViewAccount.mockResolvedValue(true);
+    policy.canManageLedger.mockResolvedValue(true);
+    repository.findActiveById.mockResolvedValue(accountSummary);
+    repository.update.mockResolvedValue({ ...accountSummary, name: '家庭现金', currentBalance: '12.30' });
+
+    await service.updateAccount('user_1', 'account_1', { name: '家庭现金', currentBalance: '12.30' });
+
+    expect(auditLogsService.record).toHaveBeenCalledWith(
+      expect.objectContaining({
+        actorUserId: 'user_1',
+        ledgerId: 'ledger_1',
+        targetType: 'account',
+        targetId: 'account_1',
+        action: 'account.update',
+        metadata: expect.objectContaining({
+          name: '家庭现金',
+          previousName: '现金',
+          currentBalance: '12.30',
+          previousCurrentBalance: '0',
+        }),
+      }),
+    );
+  });
+
   it('denies private account update when the owner is no longer allowed by account policy', async () => {
     policy.canViewAccount.mockResolvedValue(false);
 
@@ -172,6 +232,30 @@ describe('AccountsService', () => {
 
     expect(policy.canManageLedger).toHaveBeenCalledWith('user_1', 'ledger_1');
     expect(repository.archive).toHaveBeenCalledWith('account_1');
+  });
+
+  it('records an audit log after archiving an account', async () => {
+    policy.canViewAccount.mockResolvedValue(true);
+    policy.canManageLedger.mockResolvedValue(true);
+    repository.findActiveById.mockResolvedValue(accountSummary);
+    repository.archive.mockResolvedValue({ archived: true });
+
+    await service.deleteAccount('user_1', 'account_1');
+
+    expect(auditLogsService.record).toHaveBeenCalledWith(
+      expect.objectContaining({
+        actorUserId: 'user_1',
+        ledgerId: 'ledger_1',
+        targetType: 'account',
+        targetId: 'account_1',
+        action: 'account.archive',
+        metadata: expect.objectContaining({
+          name: '现金',
+          type: 'cash',
+          visibility: 'ledger',
+        }),
+      }),
+    );
   });
 
   it('archives a private account when account policy allows it without requiring ledger management', async () => {

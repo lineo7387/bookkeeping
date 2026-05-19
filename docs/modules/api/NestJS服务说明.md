@@ -26,7 +26,7 @@ NestJS 服务是系统唯一对外业务 API，负责认证、权限、账本协
 - 已完成权限基础：`LedgerPolicyService` 和 `LedgerPolicyGuard`，账本访问和管理权限通过 `ledger_members` 判断。
 - 已完成 M1.5 记账基础闭环：账户、分类、流水 Prisma 模型和 NestJS API，支持私密账户、私密流水、基础转账 metadata、软删除、Decimal 金额和 Policy 权限边界。
 - 已完成基础统计 API：月度收入/支出汇总、分类占比、账户余额统计和成员消费统计，统计查询按当前用户过滤私密流水和私密账户。
-- 已完成审计日志基础写入：`audit_logs` Prisma 模型、`AuditLogsModule`、Repository、Service 和 metadata 敏感字段脱敏。
+- 已完成审计日志基础写入与业务接入：`audit_logs` Prisma 模型、`AuditLogsModule`、Repository、Service、metadata 敏感字段脱敏，以及账本、成员、账户、分类、流水成功写操作审计。
 - 已完成 M3 后台管理 API 基础能力：`users.is_system_admin`、`SystemAdminGuard`、只读用户列表、账本列表、AI 任务占位列表和审计日志查询。
 - 已完成数据模型：`users`、`user_sessions`、`ledgers`、`ledger_members`、`ledger_invitations`、`accounts`、`categories`、`transactions`、`audit_logs`。其中 `users.is_system_admin` 表示平台系统管理员权限，不替代账本成员权限。
 
@@ -46,7 +46,7 @@ pnpm --filter @bookkeeping/api build
 
 - 增加全局异常过滤器。
 - 增加统一响应拦截器。
-- 将账本、成员、账户、分类、流水和后台写操作接入审计日志。
+- 后续后台写操作出现后，按独立设计文档接入审计日志。
 - 增加认证 E2E 测试和真实数据库集成测试。
 - 增加邀请链接和邀请接受流程。
 - 增加余额重算、AI 任务编排模块。

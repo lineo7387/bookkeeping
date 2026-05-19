@@ -1,5 +1,6 @@
 import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import type { AccountSummary } from '@bookkeeping/shared-types';
+import { AuditLogsService } from '../audit-logs/audit-logs.service';
 import { fail } from '../common/api-response';
 import { LedgerPolicyService } from '../policies/ledger-policy.service';
 import { AccountsRepository, type AccountUpdateData } from './accounts.repository';
@@ -11,6 +12,7 @@ export class AccountsService {
   constructor(
     private readonly accountsRepository: AccountsRepository,
     private readonly ledgerPolicyService: LedgerPolicyService,
+    private readonly auditLogsService: AuditLogsService,
   ) {}
 
   async listAccounts(userId: string, ledgerId: string): Promise<AccountSummary[]> {
@@ -20,7 +22,17 @@ export class AccountsService {
 
   async createAccount(userId: string, ledgerId: string, dto: CreateAccountDto): Promise<AccountSummary> {
     await this.requireManageLedger(userId, ledgerId);
-    return this.accountsRepository.create(userId, ledgerId, dto);
+    const account = await this.accountsRepository.create(userId, ledgerId, dto);
+    await this.auditLogsService.record({
+      actorUserId: userId,
+      ledgerId,
+      targetType: 'account',
+      targetId: account.id,
+      action: 'account.create',
+      summary: 'Created account',
+      metadata: accountAuditMetadata(account),
+    });
+    return account;
   }
 
   async updateAccount(userId: string, accountId: string, dto: UpdateAccountDto): Promise<AccountSummary> {
@@ -33,14 +45,41 @@ export class AccountsService {
       updateData.ownerId = userId;
     }
 
-    return this.accountsRepository.update(accountId, updateData);
+    const updated = await this.accountsRepository.update(accountId, updateData);
+    await this.auditLogsService.record({
+      actorUserId: userId,
+      ledgerId: account.ledgerId,
+      targetType: 'account',
+      targetId: accountId,
+      action: 'account.update',
+      summary: 'Updated account',
+      metadata: {
+        ...accountAuditMetadata(updated),
+        previousName: account.name,
+        previousType: account.type,
+        previousCurrency: account.currency,
+        previousVisibility: account.visibility,
+        previousCurrentBalance: account.currentBalance,
+      },
+    });
+    return updated;
   }
 
   async deleteAccount(userId: string, accountId: string): Promise<{ archived: true }> {
     await this.requireViewAccount(userId, accountId);
     const account = await this.getActiveAccount(accountId);
     await this.requireAccountManage(userId, account);
-    return this.accountsRepository.archive(accountId);
+    const archived = await this.accountsRepository.archive(accountId);
+    await this.auditLogsService.record({
+      actorUserId: userId,
+      ledgerId: account.ledgerId,
+      targetType: 'account',
+      targetId: accountId,
+      action: 'account.archive',
+      summary: 'Archived account',
+      metadata: accountAuditMetadata(account),
+    });
+    return archived;
   }
 
   private async getActiveAccount(accountId: string): Promise<AccountSummary> {
@@ -87,4 +126,16 @@ function roleDenied(): ForbiddenException {
 
 function accountNotFound(): NotFoundException {
   return new NotFoundException(fail('ACCOUNT_NOT_FOUND', 'Account not found'));
+}
+
+function accountAuditMetadata(account: AccountSummary): Record<string, unknown> {
+  return {
+    name: account.name,
+    type: account.type,
+    currency: account.currency,
+    initialBalance: account.initialBalance,
+    currentBalance: account.currentBalance,
+    visibility: account.visibility,
+    ownerId: account.ownerId,
+  };
 }
