@@ -59,7 +59,7 @@
 ## 当前工程状态
 
 - 已初始化 pnpm workspace。
-- `apps/api` 已完成 M1 和 M1.5：认证、会话、用户资料、账本、成员角色、Ledger Policy、账户、分类、流水基础闭环和对应单元测试。
+- `apps/api` 已完成 M1、M1.5 和 M2 账户余额流水联动：认证、会话、用户资料、账本、成员角色、Ledger Policy、账户、分类、流水基础闭环、正式流水联动账户余额和对应单元测试。
 - `apps/admin-web` 已创建 Vue 3 后台首页，当前使用静态数据，尚未接入真实 API。
 - `packages/shared-types` 已补充账户、分类、流水摘要类型和交易来源类型。
 - `packages/api-client` 已创建面向 NestJS 对外 API 的轻量请求客户端。
@@ -67,11 +67,11 @@
 
 ## 新对话建议
 
-如果在新对话继续开发，优先使用 Superpowers 的 `subagent-driven-development` 模式，并先检查：
+如果在新对话继续开发，先检查：
 
 ```bash
 git status --short --branch
 git log --oneline -8
 ```
 
-`main` 已合入并推送 M1.5：账户、分类、流水基础闭环和分层 Agent 上下文已完成并通过验证。后续优先方向是 M2 的账户余额流水联动、基础统计、AI 编排或后续脚手架；开始 M2 前应先补对应中文模块文档。
+`main` 已完成 M2 账户余额流水联动：正式流水创建、更新和软删除会在同一个 Prisma transaction 内调整账户余额，并已补充模块文档和交接上下文。后续优先方向是基础统计、AI 编排或后续脚手架；开始新功能前应先补对应中文模块文档。
