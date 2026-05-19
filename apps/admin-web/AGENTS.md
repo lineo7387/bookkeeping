@@ -2,7 +2,7 @@
 
 ## 模块定位
 
-`apps/admin-web` 是后台管理端，用于运营和排查系统状态。第一阶段重点覆盖系统健康、用户与账本概况、AI 任务队列、审计活动和后续管理入口。
+`apps/admin-web` 是后台管理端，用于运营和排查系统状态。第一阶段重点覆盖系统健康、用户与账本概况、AI 任务队列、审计活动和后续管理入口；当前首页已接入 M3 后台只读 Admin API。
 
 ## 修改前检查
 
@@ -77,10 +77,11 @@ src/
 
 ## API 调用规则
 
-- 当前后台 Web 使用静态数据，尚未接入真实 API。
-- 接入真实接口时，只能通过 NestJS API。
+- 当前后台 Web 首页已通过 `@bookkeeping/api-client` 接入 NestJS Admin API。
+- 后续接入真实接口时，只能通过 NestJS API。
 - 优先通过 `@bookkeeping/api-client` 访问后端，不在组件中直接拼 FastAPI 或内部服务地址。
 - API 响应类型优先来自 `@bookkeeping/shared-types`。
+- 本地调试默认读取 `VITE_API_BASE_URL` 作为 NestJS API baseUrl，未配置时使用 `/api`；系统管理员 access token 暂从 `localStorage.bookkeeping_admin_access_token` 读取，后续认证 UI 独立设计。
 
 ## 验证命令
 

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 defineProps<{
-  tasks: Array<{
+  tasks: ReadonlyArray<{
     title: string
     detail: string
     status: 'warning' | 'info' | 'success'

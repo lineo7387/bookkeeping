@@ -19,6 +19,7 @@
 - 全局设计 token、字体、基础 reset 和动画放在 `apps/admin-web/src/style.css`。
 - 组件独有样式写在对应 `.vue` 文件的 `<style scoped>` 中。
 - 页面和组件布局优先使用 Tailwind CSS utility class。
+- 后台 Web 只能调用 NestJS 对外 API，不直接调用 FastAPI。
 
 ## 当前页面
 
@@ -28,6 +29,21 @@
 - `StatCard.vue`：指标卡片。
 - `TaskPanel.vue`：任务队列。
 - `ActivityPanel.vue`：最近活动。
+
+## 真实接口接入
+
+- 首页已通过 `@bookkeeping/api-client` 接入 NestJS Admin API：
+  - `GET /admin/users`
+  - `GET /admin/ledgers`
+  - `GET /admin/ai/tasks`
+  - `GET /admin/audit-logs`
+- 当前展示首屏分页样本，默认请求 `limit=20&offset=0`，不在 M3 实现搜索、筛选或分页操作。
+- `apps/admin-web/src/services/adminApi.ts` 负责创建 API client 和并发拉取后台数据。
+- `apps/admin-web/src/services/adminDashboard.ts` 负责把 API 响应转换为页面统计卡、AI 任务队列、审计活动和状态提示。
+- `apps/admin-web/src/composables/useAdminDashboard.ts` 负责加载状态、错误状态和刷新动作。
+- `DashboardView.vue` 只负责页面组合，不直接拼接后端 URL。
+- 本地调试默认使用 `VITE_API_BASE_URL` 作为 NestJS API baseUrl；未配置时使用 `/api`。
+- 系统管理员 access token 暂从 `localStorage.bookkeeping_admin_access_token` 读取。后台认证 UI 属于后续独立功能，不能在 M3 中临时绕过 `SystemAdminGuard`。
 
 ## 设计规则
 
@@ -39,11 +55,12 @@
 - 页面组件负责组合，展示组件通过 props 接收数据。
 - 全局样式只放跨应用共享内容，不放单个组件私有样式。
 - 优先使用 Tailwind CSS，复杂黏土阴影和动效可用 scoped CSS 补充。
-- 后续接接口时，应通过统一 API client 获取数据，不在组件里直接拼 URL。
+- 接口访问应通过统一 API client 获取数据，不在组件里直接拼 URL。
 
 ## 验证方式
 
 ```bash
+pnpm --filter @bookkeeping/api-client test
 pnpm --filter @bookkeeping/admin-web typecheck
 pnpm --filter @bookkeeping/admin-web build
 ```

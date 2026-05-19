@@ -10,6 +10,8 @@
     "typecheck": "vue-tsc -b --noEmit"
   },
   "dependencies": {
+    "@bookkeeping/api-client": "workspace:*",
+    "@bookkeeping/shared-types": "workspace:*",
     "lucide-vue-next": "^1.0.0",
     "vue": "^3.5.34"
   },

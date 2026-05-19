@@ -2,8 +2,13 @@ import type {
   AiCandidateTransaction,
   AiExtractionSummary,
   AiTaskStatus,
+  AdminAiTaskSummary,
+  AdminAuditLogSummary,
+  AdminLedgerSummary,
+  AdminUserSummary,
   ApiError,
   ApiResponse,
+  PaginatedItems,
   TransactionVisibility,
 } from '@bookkeeping/shared-types';
 
@@ -61,6 +66,11 @@ export interface RejectAiExtractionRequest {
 
 export type RejectAiExtractionResult = AiExtractionSummary;
 
+export interface AdminListQuery {
+  limit?: number;
+  offset?: number;
+}
+
 export class BookkeepingApiClient {
   private readonly baseUrl: string;
   private readonly fetchImpl: typeof fetch;
@@ -116,6 +126,47 @@ export class BookkeepingApiClient {
       {
         method: 'POST',
         body,
+      },
+    );
+  }
+
+  listAdminUsers(
+    query: AdminListQuery = {},
+  ): Promise<ApiResponse<PaginatedItems<AdminUserSummary>>> {
+    return this.request<PaginatedItems<AdminUserSummary>>(`/admin/users${toQueryString(query)}`, {
+      method: 'GET',
+    });
+  }
+
+  listAdminLedgers(
+    query: AdminListQuery = {},
+  ): Promise<ApiResponse<PaginatedItems<AdminLedgerSummary>>> {
+    return this.request<PaginatedItems<AdminLedgerSummary>>(
+      `/admin/ledgers${toQueryString(query)}`,
+      {
+        method: 'GET',
+      },
+    );
+  }
+
+  listAdminAiTasks(
+    query: AdminListQuery = {},
+  ): Promise<ApiResponse<PaginatedItems<AdminAiTaskSummary>>> {
+    return this.request<PaginatedItems<AdminAiTaskSummary>>(
+      `/admin/ai/tasks${toQueryString(query)}`,
+      {
+        method: 'GET',
+      },
+    );
+  }
+
+  listAdminAuditLogs(
+    query: AdminListQuery = {},
+  ): Promise<ApiResponse<PaginatedItems<AdminAuditLogSummary>>> {
+    return this.request<PaginatedItems<AdminAuditLogSummary>>(
+      `/admin/audit-logs${toQueryString(query)}`,
+      {
+        method: 'GET',
       },
     );
   }
@@ -287,6 +338,21 @@ function toErrorDetails(error: unknown): unknown {
   }
 
   return error;
+}
+
+function toQueryString(query: AdminListQuery): string {
+  const params = new URLSearchParams();
+
+  if (query.limit !== undefined) {
+    params.set('limit', String(query.limit));
+  }
+
+  if (query.offset !== undefined) {
+    params.set('offset', String(query.offset));
+  }
+
+  const value = params.toString();
+  return value ? `?${value}` : '';
 }
 
 export type { AiCandidateTransaction, AiExtractionSummary, ApiError, ApiResponse };
