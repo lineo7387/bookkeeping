@@ -59,9 +59,9 @@
 ## 当前工程状态
 
 - 已初始化 pnpm workspace。
-- `apps/api` 已完成 M1、M1.5 和 M2 账户余额流水联动：认证、会话、用户资料、账本、成员角色、Ledger Policy、账户、分类、流水基础闭环、正式流水联动账户余额和对应单元测试。
+- `apps/api` 已完成 M1、M1.5、M2 账户余额流水联动，以及 M3 基础统计 API：认证、会话、用户资料、账本、成员角色、Ledger Policy、账户、分类、流水基础闭环、正式流水联动账户余额、月度收支、分类占比、账户余额统计、成员消费统计和对应单元测试。
 - `apps/admin-web` 已创建 Vue 3 后台首页，当前使用静态数据，尚未接入真实 API。
-- `packages/shared-types` 已补充账户、分类、流水摘要类型和交易来源类型。
+- `packages/shared-types` 已补充账户、分类、流水摘要、交易来源和基础统计响应类型。
 - `packages/api-client` 已创建面向 NestJS 对外 API 的轻量请求客户端。
 - `apps/ai-service`、`apps/mobile`、`packages/validation`、`packages/config` 尚未创建代码脚手架。
 
@@ -74,4 +74,4 @@ git status --short --branch
 git log --oneline -8
 ```
 
-`main` 已完成 M2 账户余额流水联动：正式流水创建、更新和软删除会在同一个 Prisma transaction 内调整账户余额，并已补充模块文档和交接上下文。后续优先方向是基础统计、AI 编排或后续脚手架；开始新功能前应先补对应中文模块文档。
+`main` 已完成 M2 账户余额流水联动，并已提交 M3 基础统计 API 与 M3 后续计划 `docs/superpowers/plans/2026-05-19-m3-statistics-admin-audit.md`。严格按路线继续时，下一步应执行 M3 剩余任务：审计日志、后台管理 API、后台 Web 接真实 NestJS API；AI 文本记账属于 M4，暂不提前实现。开始新功能前应先补或读取对应中文模块文档。
