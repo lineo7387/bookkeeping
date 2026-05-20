@@ -265,7 +265,7 @@ M4 本地联调目标是验证“前端或调用方只访问 NestJS，NestJS 再
 
 ```bash
 cd apps/ai-service
-uv run fastapi dev --host 127.0.0.1 --port 8000
+uv run uvicorn app.main:app --host 127.0.0.1 --port 8000
 ```
 
 可用 FastAPI 内部契约做一次最小连通性检查。该请求只用于后端联调，不能进入前端或共享 SDK：
@@ -307,6 +307,7 @@ pnpm --filter @bookkeeping/api start:dev
 联调前需要准备：
 
 - 已启动 PostgreSQL，并完成 `apps/api` 所需迁移或 Prisma 初始化。
+- 首次使用本地 Docker PostgreSQL 时，确认 `.env` 中的 `bookkeeping` role 和 database 已存在，并运行 `pnpm --filter @bookkeeping/api prisma db push`。
 - 已注册/登录用户并取得 `accessToken`。
 - 已有一个当前用户可记账的 `ledgerId`。
 - 已有同一账本下可见账户和收入/支出分类；确认候选时需要正式 `accountId` 和匹配类型的 `categoryId`。

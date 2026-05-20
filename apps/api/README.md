@@ -8,7 +8,7 @@
 
 - 已完成 NestJS 脚手架初始化。
 - 已接入 `@nestjs/config`。
-- 已初始化 Prisma 7 配置。
+- 已初始化 Prisma 7 配置，运行时通过 `@prisma/adapter-pg` 连接 PostgreSQL。
 - 已提供 `.env.example`。
 
 ## 本地环境变量
@@ -23,6 +23,13 @@ cp apps/api/.env.example apps/api/.env
 
 ```txt
 DATABASE_URL="postgresql://bookkeeping:bookkeeping@localhost:5432/bookkeeping?schema=public"
+```
+
+首次连接本地 Docker PostgreSQL 前，确认 `bookkeeping` role 和 database 已存在，并将 schema 推送到本地库：
+
+```bash
+docker exec postgres-container pg_isready -U bookkeeping -d bookkeeping
+pnpm --filter @bookkeeping/api prisma db push
 ```
 
 ## 常用命令

@@ -1,7 +1,9 @@
-import { Injectable, ServiceUnavailableException } from '@nestjs/common';
+import { Inject, Injectable, ServiceUnavailableException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { fail } from '../common/api-response';
 import type { InternalAiTextResult, TextParseContext } from './ai.types';
+
+export const AI_FETCH_IMPL = Symbol('AI_FETCH_IMPL');
 
 export interface ParseTextTransactionRequest {
   taskId: string;
@@ -18,7 +20,7 @@ export interface ParseTextTransactionRequest {
 export class AiInternalClient {
   constructor(
     private readonly configService: ConfigService,
-    private readonly fetchImpl: typeof fetch = fetch,
+    @Inject(AI_FETCH_IMPL) private readonly fetchImpl: typeof fetch,
   ) {}
 
   async parseTextTransaction(request: ParseTextTransactionRequest): Promise<InternalAiTextResult> {

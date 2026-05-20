@@ -18,7 +18,7 @@ NestJS 服务是系统唯一对外业务 API，负责认证、权限、账本协
 - 包名：`@bookkeeping/api`
 - 框架：NestJS 11
 - 配置：`@nestjs/config`
-- ORM：Prisma 7
+- ORM：Prisma 7，运行时通过 `@prisma/adapter-pg` 连接 PostgreSQL。
 - 数据库：PostgreSQL
 - 已完成基础设施：`PrismaModule`、`PrismaService`、统一 `ApiResponse` helper、全局 ValidationPipe。
 - 已完成认证基础：用户注册、登录、刷新 token、退出、`GET /auth/me`、JWT Strategy 和 `JwtAuthGuard`。
@@ -34,6 +34,15 @@ NestJS 服务是系统唯一对外业务 API，负责认证、权限、账本协
 ## 环境变量
 
 见 `apps/api/.env.example`。M4 AI 文本记账新增 `AI_SERVICE_BASE_URL`，用于 NestJS AI 模块调用 internal-only FastAPI 服务，前端和 `@bookkeeping/api-client` 不使用该地址。
+
+本地首次启动前，应确保 Docker PostgreSQL 中存在 `.env` 指向的 role 和 database。当前示例值为 `bookkeeping` / `bookkeeping`，可用以下命令检查：
+
+```bash
+docker exec postgres-container pg_isready -U bookkeeping -d bookkeeping
+pnpm --filter @bookkeeping/api prisma db push
+```
+
+`PrismaService` 会在启动时读取 `DATABASE_URL` 并创建 PostgreSQL adapter；缺少 `DATABASE_URL`、数据库 role/database 未初始化，或未安装 `@prisma/adapter-pg` 都会导致 NestJS 启动失败。
 
 ## 验证方式
 

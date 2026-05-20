@@ -75,7 +75,7 @@ git diff --check
 
 ## 后续扩展点
 
-- `apps/ai-service` 当前使用 `uv` 管理，验证命令为 `cd apps/ai-service && uv run pytest`；本地开发可使用 `uv run fastapi dev`。
+- `apps/ai-service` 当前使用 `uv` 管理，验证命令为 `cd apps/ai-service && uv run pytest`；本地开发可使用 `uv run uvicorn app.main:app --host 127.0.0.1 --port 8000`。
 - `apps/mobile` 脚手架创建后，按实际 uni-app package scripts 补充验证命令。
 - `packages/validation` 创建后，补充共享校验选型和测试策略。
 - `packages/config` 创建后，补充共享 tsconfig、lint、format 的导出方式。

@@ -333,7 +333,7 @@ git diff --check
 
 ```bash
 cd apps/ai-service
-uv run fastapi dev --host 127.0.0.1 --port 8000
+uv run uvicorn app.main:app --host 127.0.0.1 --port 8000
 ```
 
 NestJS 联调前设置主业务服务环境变量：
