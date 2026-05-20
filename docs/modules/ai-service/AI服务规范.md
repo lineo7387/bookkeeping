@@ -325,21 +325,67 @@ git diff --check
 
 ## Local Run And Troubleshooting
 
-本地启动 FastAPI 内部服务：
+本节只面向后端本地联调。FastAPI 是 internal-only 服务，前端、后台 Web、移动端和 `@bookkeeping/api-client` 不能直接调用本服务。
+
+### 1. 启动服务
+
+在 `apps/ai-service` 内启动 FastAPI：
 
 ```bash
 cd apps/ai-service
 uv run fastapi dev --host 127.0.0.1 --port 8000
 ```
 
-NestJS 联调前设置：
+NestJS 联调前设置主业务服务环境变量：
 
 ```bash
 AI_SERVICE_BASE_URL=http://127.0.0.1:8000
 AI_SERVICE_TIMEOUT_MS=5000
 ```
 
-若 NestJS 返回 `AI_TASK_FAILED`，优先检查 FastAPI 是否启动、内部路径 `/internal/ai/text-transaction` 是否可达、FastAPI 响应是否为 `failed`，以及候选字段是否满足 NestJS runtime 校验。日志中不得输出完整用户输入、完整 `rawResult`、token 或服务间密钥。
+`AI_SERVICE_TIMEOUT_MS` 用于 NestJS 内部 client 超时控制。联调时可以临时调大，提交配置示例时仍应保持较小默认值，避免同步请求长时间挂起。
+
+### 2. 直接检查内部契约
+
+以下 curl 只用于确认 FastAPI 内部服务是否按契约返回结构化候选，不能复制到前端或共享 SDK：
+
+```bash
+curl -sS http://127.0.0.1:8000/internal/ai/text-transaction \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "taskId": "local-task-1",
+    "ledgerId": "local-ledger-1",
+    "userId": "local-user-1",
+    "inputText": "今天晚饭花了86，微信支付",
+    "locale": "zh-CN",
+    "timezone": "Asia/Shanghai",
+    "defaultCurrency": "CNY",
+    "context": {
+      "categoryNames": ["餐饮", "交通", "工资"],
+      "accountHints": ["现金", "微信", "支付宝"]
+    }
+  }'
+```
+
+成功样例应满足：
+
+- HTTP 200。
+- `taskId` 与请求一致。
+- `status = "succeeded"`。
+- `candidate.type` 为 `expense` 或 `income`，M4 不返回 `transfer`。
+- `candidate.amount` 是字符串金额，例如 `"86.00"`。
+- `rawResult.provider = "deterministic-parser"`。
+
+无法解析的文本也返回 HTTP 200，但响应体为 `status = "failed"` 并携带稳定错误码，例如 `AI_PARSE_FAILED`。请求体不合法时由 FastAPI/Pydantic 返回 HTTP 422。
+
+### 3. 常见问题
+
+- `Connection refused`：FastAPI 没有启动，或 NestJS 的 `AI_SERVICE_BASE_URL` 指向了错误端口。
+- `AI_TASK_FAILED`：NestJS 已把内部失败映射为对外统一错误。优先检查 FastAPI 是否启动、内部路径 `/internal/ai/text-transaction` 是否可达、FastAPI 是否返回 `failed`，以及候选字段是否满足 NestJS runtime 校验。
+- HTTP 422：内部请求体不满足 `TextTransactionRequest`，常见原因是 `inputText` 为空、必填 ID 缺失、`defaultCurrency` 不是 3 位货币码。
+- `status = "failed"`：deterministic parser 没找到金额或无法形成可信候选，NestJS 应保存 `ai_tasks.status = failed` 和可展示的 `error_message`。
+- 候选被 NestJS 拒绝落库：检查 `candidate.type` 是否只使用 `income | expense`、`confidence` 是否在 `0..1`、金额是否使用字符串，且响应没有额外创建正式流水的语义。
+- 日志排查：日志中可以记录 `taskId`、`ledgerId`、状态、耗时和错误码；不得输出完整用户输入、完整 `rawResult`、token、API Key 或服务间密钥。
 
 ## Future Extensions
 

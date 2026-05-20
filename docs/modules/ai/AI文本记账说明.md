@@ -257,14 +257,42 @@ ai_extractions(user_id, status)
 
 ## 本地运行和联调示例
 
-启动 FastAPI 内部服务：
+M4 本地联调目标是验证“前端或调用方只访问 NestJS，NestJS 再访问 FastAPI 内部服务”。不要用前端、后台 Web 或 `@bookkeeping/api-client` 直接请求 FastAPI。
+
+### 1. 启动 FastAPI 内部服务
+
+在第一个终端启动 AI 服务：
 
 ```bash
 cd apps/ai-service
 uv run fastapi dev --host 127.0.0.1 --port 8000
 ```
 
-启动 NestJS 前确认环境变量指向内部服务：
+可用 FastAPI 内部契约做一次最小连通性检查。该请求只用于后端联调，不能进入前端或共享 SDK：
+
+```bash
+curl -sS http://127.0.0.1:8000/internal/ai/text-transaction \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "taskId": "local-task-1",
+    "ledgerId": "local-ledger-1",
+    "userId": "local-user-1",
+    "inputText": "今天晚饭花了86，微信支付",
+    "locale": "zh-CN",
+    "timezone": "Asia/Shanghai",
+    "defaultCurrency": "CNY",
+    "context": {
+      "categoryNames": ["餐饮", "交通", "工资"],
+      "accountHints": ["现金", "微信", "支付宝"]
+    }
+  }'
+```
+
+预期返回 `status = "succeeded"`，且 `candidate.type` 只会是 `income` 或 `expense`。如果文本没有可识别金额，当前 deterministic parser 会返回 HTTP 200 且 `status = "failed"`，由 NestJS 映射为对外统一失败。
+
+### 2. 启动 NestJS 主业务服务
+
+在第二个终端启动 NestJS 前确认环境变量指向内部服务：
 
 ```bash
 AI_SERVICE_BASE_URL=http://127.0.0.1:8000
@@ -272,14 +300,72 @@ AI_SERVICE_TIMEOUT_MS=5000
 pnpm --filter @bookkeeping/api start:dev
 ```
 
-前端、后台 Web 和 `@bookkeeping/api-client` 仍只能调用 NestJS。联调时使用登录后的 access token 调用 `POST /ledgers/:ledgerId/ai/text-parse`，不要从页面或共享 SDK 直接调用 FastAPI `/internal/ai/text-transaction`。
+`.env.example` 已提供 `AI_SERVICE_BASE_URL=http://127.0.0.1:8000`。如果本地端口不同，只改 NestJS 环境变量，不要把 FastAPI 内部地址写进前端配置或 `packages/api-client`。
+
+### 3. 通过 NestJS 对外 API 联调
+
+联调前需要准备：
+
+- 已启动 PostgreSQL，并完成 `apps/api` 所需迁移或 Prisma 初始化。
+- 已注册/登录用户并取得 `accessToken`。
+- 已有一个当前用户可记账的 `ledgerId`。
+- 已有同一账本下可见账户和收入/支出分类；确认候选时需要正式 `accountId` 和匹配类型的 `categoryId`。
+
+创建文本解析任务：
+
+```bash
+curl -sS http://127.0.0.1:3000/api/ledgers/<ledgerId>/ai/text-parse \
+  -H 'Authorization: Bearer <accessToken>' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "inputText": "今天晚饭花了86，微信支付",
+    "locale": "zh-CN",
+    "timezone": "Asia/Shanghai",
+    "defaultCurrency": "CNY"
+  }'
+```
+
+预期响应包含 `taskId`、`status = "succeeded"` 和 `extraction.status = "pending"`。此时不会创建正式 `transaction`。
+
+确认候选并创建正式流水：
+
+```bash
+curl -sS http://127.0.0.1:3000/api/ai/extractions/<extractionId>/confirm \
+  -H 'Authorization: Bearer <accessToken>' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "ledgerId": "<ledgerId>",
+    "accountId": "<accountId>",
+    "categoryId": "<expenseCategoryId>",
+    "amount": "86.00",
+    "occurredAt": "2026-05-20T11:00:00.000Z",
+    "visibility": "ledger",
+    "note": "晚饭"
+  }'
+```
+
+预期响应返回正式流水摘要，`source = "ai_text"`，并且候选状态变为 `confirmed`。如果账户是私密账户，NestJS 会强制正式流水为 `private`。
+
+拒绝候选：
+
+```bash
+curl -sS http://127.0.0.1:3000/api/ai/extractions/<extractionId>/reject \
+  -H 'Authorization: Bearer <accessToken>' \
+  -H 'Content-Type: application/json' \
+  -d '{"reason": "金额不准确"}'
+```
+
+拒绝后只更新候选状态，不创建正式流水。
 
 ## 故障排查
 
-- 返回 `AI_TASK_FAILED` 时，优先确认 FastAPI 是否已启动、`AI_SERVICE_BASE_URL` 是否正确、`AI_SERVICE_TIMEOUT_MS` 是否过短。
-- 如果 FastAPI 返回 `failed`，NestJS 会把任务标记为 `failed`，普通接口只返回统一错误，不暴露内部 URL 或模型原文。
-- 如果候选字段结构非法，NestJS 内部 client 会拒绝响应并标记任务失败，避免坏候选落库。
-- 确认候选时仍要求用户提供可见账户；收入和支出还要求分类与流水类型匹配。
+- `POST /ledgers/:ledgerId/ai/text-parse` 返回 `AI_TASK_FAILED`：先确认 FastAPI 进程是否启动、NestJS 的 `AI_SERVICE_BASE_URL` 是否指向正确端口、`AI_SERVICE_TIMEOUT_MS` 是否过短，再用上方 FastAPI curl 检查 `/internal/ai/text-transaction` 是否可达。
+- FastAPI curl 返回 HTTP 422：请求体不满足内部契约，例如 `inputText` 为空、缺少 `taskId` / `ledgerId` / `userId`，或 `defaultCurrency` 不是 3 位货币码。
+- FastAPI 返回 `status = "failed"`：当前文本无法解析为可信候选，NestJS 会把任务标记为 `failed`，普通接口只返回统一错误，不暴露内部 URL 或模型原文。
+- NestJS 日志提示候选字段结构非法：内部 client 会拒绝响应并标记任务失败，避免坏候选落库；优先检查 `candidate.type` 是否为 `income | expense`、`amount` 是否为字符串金额、`confidence` 是否在 `0..1`。
+- 确认候选返回账户或分类错误：确认请求仍必须提供当前用户可见账户；收入和支出还要求分类属于同一账本且类型匹配。
+- 确认候选后余额不符合预期：先确认正式流水类型、账户、金额和候选状态；AI 确认创建正式流水会复用 `TransactionsService.createFromAiExtraction()` 和账户余额联动逻辑。
+- Admin AI 任务列表看不到完整输入文本：这是预期隐私边界。`GET /admin/ai/tasks` 只返回脱敏摘要，排查原文和 `raw_result` 需要另行设计并补审计。
 
 ## 测试与验证方式
 
