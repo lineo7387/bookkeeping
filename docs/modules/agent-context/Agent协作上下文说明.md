@@ -24,7 +24,7 @@ Agent 协作上下文用于让 AI 在 monorepo 中快速识别项目边界、技
 
 - `apps/api/AGENTS.md`：NestJS 主业务服务。
 - `apps/admin-web/AGENTS.md`：Vue 后台管理端。
-- `apps/ai-service/AGENTS.md`：规划中的 FastAPI AI 服务。
+- `apps/ai-service/AGENTS.md`：已创建的 FastAPI AI 服务，当前提供 M4 文本记账 deterministic parser。
 - `apps/mobile/AGENTS.md`：规划中的 uni-app 用户多端。
 
 已维护的共享包上下文：
@@ -73,7 +73,7 @@ git diff --check
 
 ## 后续扩展点
 
-- `apps/ai-service` 脚手架创建后，按实际 Python 工具链补充验证命令。
+- `apps/ai-service` 当前使用 `uv` 管理，验证命令为 `cd apps/ai-service && uv run pytest`；本地开发可使用 `uv run fastapi dev`。
 - `apps/mobile` 脚手架创建后，按实际 uni-app package scripts 补充验证命令。
 - `packages/validation` 创建后，补充共享校验选型和测试策略。
 - `packages/config` 创建后，补充共享 tsconfig、lint、format 的导出方式。

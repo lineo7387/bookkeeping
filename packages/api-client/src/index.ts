@@ -3,6 +3,8 @@ import type {
   AiExtractionSummary,
   AiTaskDetail,
   AiTextParseResult,
+  AiTaskStatus,
+  AiTaskType,
   AdminAiTaskSummary,
   AdminAuditLogSummary,
   AdminLedgerSummary,
@@ -10,7 +12,6 @@ import type {
   ApiError,
   ApiResponse,
   PaginatedItems,
-  TransactionVisibility,
   ConfirmAiExtractionResult,
 } from '@bookkeeping/shared-types';
 
@@ -34,7 +35,7 @@ export interface ConfirmAiExtractionRequest {
   categoryId?: string;
   amount?: string;
   occurredAt?: string;
-  visibility?: TransactionVisibility;
+  visibility?: 'ledger' | 'private';
   note?: string | null;
 }
 
@@ -47,6 +48,11 @@ export type RejectAiExtractionResult = AiExtractionSummary;
 export interface AdminListQuery {
   limit?: number;
   offset?: number;
+}
+
+export interface AdminAiTasksQuery extends AdminListQuery {
+  status?: AiTaskStatus;
+  type?: AiTaskType;
 }
 
 export class BookkeepingApiClient {
@@ -140,7 +146,7 @@ export class BookkeepingApiClient {
   }
 
   listAdminAiTasks(
-    query: AdminListQuery = {},
+    query: AdminAiTasksQuery = {},
   ): Promise<ApiResponse<PaginatedItems<AdminAiTaskSummary>>> {
     return this.request<PaginatedItems<AdminAiTaskSummary>>(
       `/admin/ai/tasks${toQueryString(query)}`,
@@ -330,7 +336,7 @@ function toErrorDetails(error: unknown): unknown {
   return error;
 }
 
-function toQueryString(query: AdminListQuery): string {
+function toQueryString(query: AdminListQuery & Pick<AdminAiTasksQuery, 'status' | 'type'>): string {
   const params = new URLSearchParams();
 
   if (query.limit !== undefined) {
@@ -339,6 +345,14 @@ function toQueryString(query: AdminListQuery): string {
 
   if (query.offset !== undefined) {
     params.set('offset', String(query.offset));
+  }
+
+  if (query.status !== undefined) {
+    params.set('status', String(query.status));
+  }
+
+  if (query.type !== undefined) {
+    params.set('type', String(query.type));
   }
 
   const value = params.toString();

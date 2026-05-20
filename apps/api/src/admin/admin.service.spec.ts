@@ -92,7 +92,7 @@ describe('AdminService', () => {
     await expect(service.listLedgers({ limit: 20, offset: 0 })).resolves.toMatchObject({
       items: [{ id: 'ledger_1', memberCount: 2 }],
     });
-    await expect(service.listAiTasks({ limit: 20, offset: 0 })).resolves.toEqual({
+    await expect(service.listAiTasks({ limit: 20, offset: 0, status: 'failed', type: 'text_parse' })).resolves.toEqual({
       items: [
         {
           id: 'task_1',
@@ -105,7 +105,7 @@ describe('AdminService', () => {
       limit: 20,
       offset: 0,
     });
-    expect(repository.listAiTasks).toHaveBeenCalledWith({ limit: 20, offset: 0 });
+    expect(repository.listAiTasks).toHaveBeenCalledWith({ limit: 20, offset: 0, status: 'failed', type: 'text_parse' });
     await expect(service.listAuditLogs({ limit: 20, offset: 0 })).resolves.toMatchObject({
       items: [{ id: 'audit_1', metadata: { amount: '86.00' } }],
     });

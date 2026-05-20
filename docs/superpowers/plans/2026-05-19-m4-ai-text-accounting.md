@@ -1,5 +1,7 @@
 # M4 AI Text Accounting Implementation Plan
 
+> **Status:** 已完成的历史计划，仅供追溯和复盘。不要按本文继续执行 M4 首版；继续开发时应以当前代码、模块文档和最新交接说明为准。
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [x]`) syntax for tracking.
 
 **Goal:** Build M4 AI text accounting so natural-language input creates an AI candidate, and only user confirmation creates a formal transaction.
@@ -809,8 +811,7 @@ If `apps/ai-service` has been scaffolded, also run:
 
 ```bash
 cd apps/ai-service
-source .venv/bin/activate
-pytest
+uv run pytest
 ```
 
 Expected: all commands exit 0.

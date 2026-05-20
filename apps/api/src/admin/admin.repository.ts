@@ -7,13 +7,13 @@ import type {
   PaginatedItems,
 } from '@bookkeeping/shared-types';
 import { PrismaService } from '../prisma/prisma.service';
-import type { ListAdminQueryDto } from './dto/list-admin-query.dto';
+import type { NormalizedAdminQuery } from './dto/list-admin-query.dto';
 
 @Injectable()
 export class AdminRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  async listUsers(query: Required<ListAdminQueryDto>): Promise<PaginatedItems<AdminUserSummary>> {
+  async listUsers(query: NormalizedAdminQuery): Promise<PaginatedItems<AdminUserSummary>> {
     const users = await this.prisma.user.findMany({
       orderBy: { createdAt: 'desc' },
       skip: query.offset,
@@ -46,7 +46,7 @@ export class AdminRepository {
     };
   }
 
-  async listLedgers(query: Required<ListAdminQueryDto>): Promise<PaginatedItems<AdminLedgerSummary>> {
+  async listLedgers(query: NormalizedAdminQuery): Promise<PaginatedItems<AdminLedgerSummary>> {
     const ledgers = await this.prisma.ledger.findMany({
       orderBy: { createdAt: 'desc' },
       skip: query.offset,
@@ -83,8 +83,12 @@ export class AdminRepository {
     };
   }
 
-  async listAiTasks(query: Required<ListAdminQueryDto>): Promise<PaginatedItems<AdminAiTaskSummary>> {
+  async listAiTasks(query: NormalizedAdminQuery): Promise<PaginatedItems<AdminAiTaskSummary>> {
     const tasks = await this.prisma.aiTask.findMany({
+      where: {
+        status: query.status,
+        type: query.type,
+      },
       orderBy: { createdAt: 'desc' },
       skip: query.offset,
       take: query.limit,
@@ -110,7 +114,7 @@ export class AdminRepository {
     };
   }
 
-  async listAuditLogs(query: Required<ListAdminQueryDto>): Promise<PaginatedItems<AdminAuditLogSummary>> {
+  async listAuditLogs(query: NormalizedAdminQuery): Promise<PaginatedItems<AdminAuditLogSummary>> {
     const auditLogs = await this.prisma.auditLog.findMany({
       orderBy: { createdAt: 'desc' },
       skip: query.offset,

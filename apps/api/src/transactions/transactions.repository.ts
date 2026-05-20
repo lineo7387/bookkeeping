@@ -64,6 +64,7 @@ type CategoryRecord = {
 };
 
 export type TransactionClient = {
+  auditLog: Prisma.TransactionClient['auditLog'];
   transaction: {
     create(args: Prisma.TransactionCreateArgs): Promise<TransactionRecord>;
     updateMany(args: Prisma.TransactionUpdateManyArgs): Promise<Prisma.BatchPayload>;

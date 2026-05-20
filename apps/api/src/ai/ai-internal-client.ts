@@ -16,30 +16,45 @@ export interface ParseTextTransactionRequest {
 
 @Injectable()
 export class AiInternalClient {
-  constructor(private readonly configService: ConfigService) {}
+  constructor(
+    private readonly configService: ConfigService,
+    private readonly fetchImpl: typeof fetch = fetch,
+  ) {}
 
   async parseTextTransaction(request: ParseTextTransactionRequest): Promise<InternalAiTextResult> {
     const baseUrl = this.configService.get<string>('AI_SERVICE_BASE_URL') ?? 'http://127.0.0.1:8000';
-    const response = await fetch(`${baseUrl.replace(/\/+$/, '')}/internal/ai/text-transaction`, {
-      method: 'POST',
-      headers: {
-        Accept: 'application/json',
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        taskId: request.taskId,
-        ledgerId: request.ledgerId,
-        userId: request.userId,
-        inputText: request.inputText,
-        locale: request.locale,
-        timezone: request.timezone,
-        defaultCurrency: request.defaultCurrency,
-        context: {
-          categoryNames: request.context.categoryNames,
-          accountHints: request.context.accountHints,
+    const timeoutMs = getTimeoutMs(this.configService.get<string>('AI_SERVICE_TIMEOUT_MS'));
+    const abortController = new AbortController();
+    const timeout = setTimeout(() => abortController.abort(), timeoutMs);
+
+    let response: Response;
+    try {
+      response = await this.fetchImpl(`${baseUrl.replace(/\/+$/, '')}/internal/ai/text-transaction`, {
+        method: 'POST',
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
         },
-      }),
-    });
+        signal: abortController.signal,
+        body: JSON.stringify({
+          taskId: request.taskId,
+          ledgerId: request.ledgerId,
+          userId: request.userId,
+          inputText: request.inputText,
+          locale: request.locale,
+          timezone: request.timezone,
+          defaultCurrency: request.defaultCurrency,
+          context: {
+            categoryNames: request.context.categoryNames,
+            accountHints: request.context.accountHints,
+          },
+        }),
+      });
+    } catch {
+      throw new ServiceUnavailableException(fail('AI_TASK_FAILED', 'AI service request failed'));
+    } finally {
+      clearTimeout(timeout);
+    }
 
     if (!response.ok) {
       throw new ServiceUnavailableException(fail('AI_TASK_FAILED', 'AI service request failed'));
@@ -61,5 +76,54 @@ function isInternalAiTextResult(value: unknown): value is InternalAiTextResult {
   if (!('status' in value) || (value.status !== 'succeeded' && value.status !== 'failed')) {
     return false;
   }
-  return 'candidate' in value && 'rawResult' in value;
+  if (!('candidate' in value) || !('rawResult' in value)) {
+    return false;
+  }
+  if (value.status === 'failed') {
+    return value.candidate === null && isNullableRecord(value.rawResult);
+  }
+  return isInternalAiTextCandidate(value.candidate) && isNullableRecord(value.rawResult);
+}
+
+function isInternalAiTextCandidate(value: unknown): value is InternalAiTextResult['candidate'] {
+  if (!value || typeof value !== 'object') {
+    return false;
+  }
+
+  const candidate = value as Record<string, unknown>;
+  return (
+    (candidate.type === 'income' || candidate.type === 'expense') &&
+    isPositiveDecimalString(candidate.amount) &&
+    typeof candidate.currency === 'string' &&
+    /^[A-Z]{3}$/.test(candidate.currency) &&
+    typeof candidate.occurredAt === 'string' &&
+    Number.isFinite(Date.parse(candidate.occurredAt)) &&
+    isNullableString(candidate.categoryName) &&
+    isNullableString(candidate.accountHint) &&
+    isNullableString(candidate.merchant) &&
+    isNullableString(candidate.note) &&
+    typeof candidate.confidence === 'number' &&
+    candidate.confidence >= 0 &&
+    candidate.confidence <= 1
+  );
+}
+
+function isNullableString(value: unknown): value is string | null {
+  return value === null || typeof value === 'string';
+}
+
+function isNullableRecord(value: unknown): value is Record<string, unknown> | null {
+  return value === null || (typeof value === 'object' && !Array.isArray(value));
+}
+
+function isPositiveDecimalString(value: unknown): value is string {
+  return typeof value === 'string' && /^(?=.*[1-9])\d{1,16}(\.\d{1,2})?$/.test(value);
+}
+
+function getTimeoutMs(value: string | undefined): number {
+  const parsed = Number(value);
+  if (Number.isInteger(parsed) && parsed > 0) {
+    return parsed;
+  }
+  return 5000;
 }

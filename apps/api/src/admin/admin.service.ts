@@ -7,7 +7,7 @@ import type {
   PaginatedItems,
 } from '@bookkeeping/shared-types';
 import { AdminRepository } from './admin.repository';
-import type { ListAdminQueryDto } from './dto/list-admin-query.dto';
+import type { ListAdminAiTasksQueryDto, ListAdminQueryDto, NormalizedAdminQuery } from './dto/list-admin-query.dto';
 
 @Injectable()
 export class AdminService {
@@ -21,7 +21,7 @@ export class AdminService {
     return this.adminRepository.listLedgers(normalizeQuery(query));
   }
 
-  listAiTasks(query: ListAdminQueryDto): Promise<PaginatedItems<AdminAiTaskSummary>> {
+  listAiTasks(query: ListAdminAiTasksQueryDto): Promise<PaginatedItems<AdminAiTaskSummary>> {
     return this.adminRepository.listAiTasks(normalizeQuery(query));
   }
 
@@ -30,9 +30,11 @@ export class AdminService {
   }
 }
 
-function normalizeQuery(query: ListAdminQueryDto): Required<ListAdminQueryDto> {
+function normalizeQuery(query: ListAdminQueryDto | ListAdminAiTasksQueryDto): NormalizedAdminQuery {
   return {
     limit: query.limit ?? 20,
     offset: query.offset ?? 0,
+    status: 'status' in query ? query.status : undefined,
+    type: 'type' in query ? query.type : undefined,
   };
 }

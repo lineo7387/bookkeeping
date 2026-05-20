@@ -44,7 +44,7 @@ export interface CreateAiExtractionData {
 }
 
 export interface InternalAiTextCandidate {
-  type: 'income' | 'expense' | 'transfer';
+  type: 'income' | 'expense';
   amount: string;
   currency: string;
   occurredAt: string;

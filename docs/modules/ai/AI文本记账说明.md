@@ -18,6 +18,7 @@ M4 包含：
 - `POST /ai/extractions/:extractionId/confirm`：用户确认候选结果，NestJS 创建正式流水。
 - `POST /ai/extractions/:extractionId/reject`：用户拒绝候选结果，保留拒绝状态。
 - 后台 `GET /admin/ai/tasks` 从 M3 占位列表升级为真实只读列表。
+- 后台 `GET /admin/ai/tasks` 支持 `status` 和 `type` 可选筛选，便于排查 M4 文本解析任务。
 
 M4 不包含：
 
@@ -56,6 +57,8 @@ FastAPI 不负责：
 - 创建、确认、修改或删除正式流水。
 - 直接访问 PostgreSQL 主业务表。
 - 对前端、后台 Web、移动端开放接口。
+
+M4 文本 parser 当前只生成 `income` / `expense` 候选；`transfer` 候选、转账目标账户补全和票据 OCR 属于后续扩展。
 
 ## 数据模型
 
@@ -251,6 +254,32 @@ ai_extractions(user_id, status)
 - `raw_result` 默认不通过普通用户接口返回。
 - 后台 AI 任务列表只展示任务摘要，不展示完整输入文本和完整模型原文。
 - 拒绝候选必须保留状态，不能物理删除审计线索。
+
+## 本地运行和联调示例
+
+启动 FastAPI 内部服务：
+
+```bash
+cd apps/ai-service
+uv run fastapi dev --host 127.0.0.1 --port 8000
+```
+
+启动 NestJS 前确认环境变量指向内部服务：
+
+```bash
+AI_SERVICE_BASE_URL=http://127.0.0.1:8000
+AI_SERVICE_TIMEOUT_MS=5000
+pnpm --filter @bookkeeping/api start:dev
+```
+
+前端、后台 Web 和 `@bookkeeping/api-client` 仍只能调用 NestJS。联调时使用登录后的 access token 调用 `POST /ledgers/:ledgerId/ai/text-parse`，不要从页面或共享 SDK 直接调用 FastAPI `/internal/ai/text-transaction`。
+
+## 故障排查
+
+- 返回 `AI_TASK_FAILED` 时，优先确认 FastAPI 是否已启动、`AI_SERVICE_BASE_URL` 是否正确、`AI_SERVICE_TIMEOUT_MS` 是否过短。
+- 如果 FastAPI 返回 `failed`，NestJS 会把任务标记为 `failed`，普通接口只返回统一错误，不暴露内部 URL 或模型原文。
+- 如果候选字段结构非法，NestJS 内部 client 会拒绝响应并标记任务失败，避免坏候选落库。
+- 确认候选时仍要求用户提供可见账户；收入和支出还要求分类与流水类型匹配。
 
 ## 测试与验证方式
 

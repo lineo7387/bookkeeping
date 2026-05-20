@@ -11,6 +11,7 @@ describe('TransactionsService', () => {
       TransactionsRepository,
       | 'listVisibleForUser'
       | 'createWithBalanceChanges'
+      | 'createWithBalanceChangesInTransaction'
       | 'findActiveById'
       | 'findActiveAccountById'
       | 'findActiveCategoryById'
@@ -79,6 +80,7 @@ describe('TransactionsService', () => {
     repository = {
       listVisibleForUser: jest.fn(),
       createWithBalanceChanges: jest.fn(),
+      createWithBalanceChangesInTransaction: jest.fn(),
       findActiveById: jest.fn(),
       findActiveAccountById: jest.fn(),
       findActiveCategoryById: jest.fn(),
@@ -296,6 +298,46 @@ describe('TransactionsService', () => {
         metadata: { aiExtractionId: 'extraction_1' },
       }),
       [{ accountId: 'account_1', delta: '-86.00' }],
+    );
+  });
+
+  it('records internal AI text transaction audit logs with the provided transaction client', async () => {
+    const tx = { transaction: {}, account: {}, auditLog: {} };
+    policy.canCreateTransaction.mockResolvedValue(true);
+    policy.canViewAccount.mockResolvedValue(true);
+    repository.findActiveAccountById.mockResolvedValue(account);
+    repository.findActiveCategoryById.mockResolvedValue(expenseCategory);
+    repository.createWithBalanceChangesInTransaction.mockResolvedValue({ ...transaction, source: 'ai_text' });
+
+    await service.createFromAiExtraction(
+      'user_1',
+      {
+        ledgerId: 'ledger_1',
+        accountId: 'account_1',
+        categoryId: 'category_1',
+        type: 'expense',
+        amount: '86.00',
+        currency: 'CNY',
+        occurredAt: '2026-05-19T11:00:00.000Z',
+        visibility: 'ledger',
+        merchant: null,
+        note: '晚饭',
+        sourceExtractionId: 'extraction_1',
+      },
+      tx as never,
+    );
+
+    expect(repository.createWithBalanceChangesInTransaction).toHaveBeenCalledWith(
+      tx,
+      expect.objectContaining({ source: 'ai_text' }),
+      [{ accountId: 'account_1', delta: '-86.00' }],
+    );
+    expect(auditLogsService.record).toHaveBeenCalledWith(
+      expect.objectContaining({
+        targetId: 'transaction_1',
+        summary: 'Created transaction from AI text extraction',
+      }),
+      tx,
     );
   });
 

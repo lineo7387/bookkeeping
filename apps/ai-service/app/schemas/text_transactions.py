@@ -34,7 +34,7 @@ class TextTransactionRequest(BaseModel):
 class TextTransactionCandidate(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
-    type: Literal["income", "expense", "transfer"]
+    type: Literal["income", "expense"]
     amount: str
     currency: str
     occurred_at: str = Field(alias="occurredAt")

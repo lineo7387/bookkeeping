@@ -42,6 +42,8 @@ Query:
 
 - `limit`：每页数量，默认 20，范围 1-100。
 - `offset`：偏移量，默认 0。
+- `status`：可选，按 AI 任务状态筛选，允许 `pending`、`processing`、`succeeded`、`failed`。
+- `type`：可选，按 AI 任务类型筛选，允许 `text_parse`、`receipt_ocr`、`classify`、`insight`。
 
 Response data:
 
@@ -178,12 +180,15 @@ pnpm --filter @bookkeeping/api typecheck
 pnpm --filter @bookkeeping/api build
 ```
 
-完成 M3 Admin API 后，还需要运行项目级验证命令：
+修改 Admin API 或 M4 AI 任务摘要后，还需要运行项目级验证命令：
 
 ```bash
 pnpm --filter @bookkeeping/api test
 pnpm --filter @bookkeeping/api typecheck
 pnpm --filter @bookkeeping/api build
+pnpm --filter @bookkeeping/api-client test
+pnpm --filter @bookkeeping/api-client build
+pnpm --filter @bookkeeping/admin-web build
 pnpm build
 pnpm test
 git diff --check
@@ -191,7 +196,7 @@ git diff --check
 
 ## 后续扩展点
 
-- 后续可为 `/admin/ai/tasks` 增加任务类型、状态和时间范围筛选，但仍不得直接暴露完整输入文本或模型原始结果。
+- 后续可为 `/admin/ai/tasks` 增加时间范围、账本 ID 和用户 ID 等排查筛选，但仍不得直接暴露完整输入文本或模型原始结果。
 - 后台 Web 认证 UI、搜索、筛选和分页交互应单独补充设计后再扩展；当前首页只展示首屏分页样本。
 - 后续如需后台禁用用户、归档账本、重放 AI 任务等写操作，应先补充独立中文设计文档，并为每个敏感操作写入审计日志。
 - 可增加按用户、账本、动作和时间范围筛选审计日志的查询参数。

@@ -180,23 +180,26 @@ export class TransactionsService {
       ? await this.transactionsRepository.createWithBalanceChangesInTransaction(tx, createData, balanceChanges)
       : await this.transactionsRepository.createWithBalanceChanges(createData, balanceChanges);
 
-    await this.auditLogsService.record({
-      actorUserId: userId,
-      ledgerId: input.ledgerId,
-      targetType: 'transaction',
-      targetId: created.id,
-      action: 'transaction.create',
-      summary: 'Created transaction from AI text extraction',
-      metadata: {
-        type: created.type,
-        amount: created.amount,
-        currency: created.currency,
-        accountId: created.accountId,
-        categoryId: created.categoryId,
-        visibility: created.visibility,
-        source: created.source,
+    await this.auditLogsService.record(
+      {
+        actorUserId: userId,
+        ledgerId: input.ledgerId,
+        targetType: 'transaction',
+        targetId: created.id,
+        action: 'transaction.create',
+        summary: 'Created transaction from AI text extraction',
+        metadata: {
+          type: created.type,
+          amount: created.amount,
+          currency: created.currency,
+          accountId: created.accountId,
+          categoryId: created.categoryId,
+          visibility: created.visibility,
+          source: created.source,
+        },
       },
-    });
+      tx,
+    );
 
     return created;
   }

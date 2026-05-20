@@ -28,7 +28,7 @@ describe('AiService', () => {
   let transactionsService: jest.Mocked<Pick<TransactionsService, 'createFromAiExtraction'>>;
   let service: AiService;
 
-  const candidate: AiCandidateTransaction = {
+  const candidate: AiCandidateTransaction & { type: 'expense' } = {
     ledgerId: 'ledger_1',
     type: 'expense',
     amount: '86.00',

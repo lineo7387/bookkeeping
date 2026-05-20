@@ -37,7 +37,7 @@
 - 首页已通过 `@bookkeeping/api-client` 接入 NestJS Admin API：
   - `GET /admin/users`
   - `GET /admin/ledgers`
-  - `GET /admin/ai/tasks`
+  - `GET /admin/ai/tasks`，当前首页使用首屏分页样本；后续 AI 任务页可传 `status` / `type` 筛选。
   - `GET /admin/audit-logs`
 - 当前展示首屏分页样本，默认请求 `limit=20&offset=0`，不在 M3 实现搜索、筛选或分页操作。
 - `apps/admin-web/src/services/apiClient.ts` 负责创建后台 Web 本地 API client，并注入 baseUrl、fetch、token 等应用级配置。
