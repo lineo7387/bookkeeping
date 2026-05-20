@@ -266,12 +266,11 @@ pnpm test
 git diff --check
 ```
 
-FastAPI 脚手架创建后补充：
+FastAPI AI 服务已由用户使用 `uv` 创建，修改文本解析服务后补充：
 
 ```bash
 cd apps/ai-service
-source .venv/bin/activate
-pytest
+uv run pytest
 ```
 
 ## 后续扩展点

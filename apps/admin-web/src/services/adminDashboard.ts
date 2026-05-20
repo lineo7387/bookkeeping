@@ -63,7 +63,7 @@ export function createDashboardViewModel(data: AdminDashboardData): DashboardVie
         key: 'aiTasks',
         label: 'AI任务',
         value: formatCount(data.aiTasks.items.length),
-        hint: pendingAiTaskCount > 0 ? `处理中 ${pendingAiTaskCount}` : 'M3 占位接口',
+        hint: pendingAiTaskCount > 0 ? `处理中 ${pendingAiTaskCount}` : '真实摘要',
         tone: 'pink',
       },
       {
@@ -79,7 +79,7 @@ export function createDashboardViewModel(data: AdminDashboardData): DashboardVie
     healthItems: [
       { tone: 'green', label: 'NestJS Admin API 已接入' },
       { tone: 'blue', label: '后台 Web 仅调用对外 API' },
-      { tone: 'violet', label: 'AI 任务维持 M3 只读占位' },
+      { tone: 'violet', label: 'AI 任务读取真实摘要' },
     ],
   }
 }
@@ -112,8 +112,8 @@ function createTaskItems(items: AdminAiTaskSummary[]): DashboardTaskItem[] {
   if (items.length === 0) {
     return [
       {
-        title: 'AI 任务占位接口',
-        detail: 'M3 已接通 /admin/ai/tasks，真实 AI 任务模型会在 M4 后续接入。',
+        title: '暂无 AI 任务',
+        detail: '后台已接通 /admin/ai/tasks，当前没有可展示的 AI 任务摘要。',
         status: 'success',
       },
     ]

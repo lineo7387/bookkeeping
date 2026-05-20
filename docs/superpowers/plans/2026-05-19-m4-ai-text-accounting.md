@@ -1,12 +1,14 @@
 # M4 AI Text Accounting Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [x]`) syntax for tracking.
 
 **Goal:** Build M4 AI text accounting so natural-language input creates an AI candidate, and only user confirmation creates a formal transaction.
 
-**Architecture:** NestJS remains the only public business API and owns authentication, Ledger Policy checks, AI task persistence, candidate confirmation, and formal transaction creation. FastAPI is internal-only and only returns structured candidate results; because `apps/ai-service` is not scaffolded yet, FastAPI implementation starts after the user runs the documented scaffold commands.
+**Architecture:** NestJS remains the only public business API and owns authentication, Ledger Policy checks, AI task persistence, candidate confirmation, and formal transaction creation. FastAPI is internal-only and only returns structured candidate results. `apps/ai-service` has now been scaffolded by the user with `uv` and includes the M4 deterministic text parser contract.
 
 **Tech Stack:** NestJS 11, Prisma 7, Jest, class-validator, `@bookkeeping/shared-types`, `@bookkeeping/api-client`, FastAPI, Pydantic, pytest.
+
+**Completion note on 2026-05-20:** M4 AI text accounting was implemented and committed locally as `9de7668 feat: add m4 ai text accounting`. The work added `ai_tasks` / `ai_extractions`, `AiModule`, internal FastAPI client, candidate save/confirm/reject flow, `source = ai_text` transaction creation through NestJS, real Admin AI task summaries, shared contracts, API client coverage, and Chinese documentation updates. Final verification passed before commit: Prisma generate, API test/typecheck/build, shared-types build, api-client test/build, workspace build/test, `git diff --check`, and `cd apps/ai-service && uv run pytest`.
 
 ---
 
@@ -87,7 +89,7 @@ Explicitly out of scope:
 - Existing: `packages/shared-types/AGENTS.md`
 - Existing: `packages/api-client/AGENTS.md`
 
-- [ ] **Step 1: Confirm branch and clean status**
+- [x] **Step 1: Confirm branch and clean status**
 
 Run:
 
@@ -98,7 +100,7 @@ git log --oneline -8
 
 Expected: current branch is `codex/m4-ai-text-accounting`; worktree is clean before implementation.
 
-- [ ] **Step 2: Run baseline verification**
+- [x] **Step 2: Run baseline verification**
 
 Run:
 
@@ -114,7 +116,7 @@ git diff --check
 
 Expected: all commands exit 0 before M4 code changes.
 
-- [ ] **Step 3: Commit documentation baseline if needed**
+- [x] **Step 3: Commit documentation baseline if needed**
 
 Run:
 
@@ -133,7 +135,7 @@ Expected: commit succeeds locally. Do not push unless the user explicitly asks.
 - Create: `apps/api/src/ai/ai.repository.ts`
 - Modify: `docs/modules/ai/AI文本记账说明.md` if schema names change during implementation.
 
-- [ ] **Step 1: Add failing repository test**
+- [x] **Step 1: Add failing repository test**
 
 Create `apps/api/src/ai/ai.repository.spec.ts`:
 
@@ -205,7 +207,7 @@ pnpm --filter @bookkeeping/api test -- ai.repository.spec.ts
 
 Expected before implementation: FAIL because `AiRepository` does not exist.
 
-- [ ] **Step 2: Add Prisma enums and models**
+- [x] **Step 2: Add Prisma enums and models**
 
 Modify `apps/api/prisma/schema.prisma` with:
 
@@ -298,7 +300,7 @@ pnpm --filter @bookkeeping/api prisma:generate
 
 Expected: Prisma client regenerates successfully.
 
-- [ ] **Step 3: Implement repository methods**
+- [x] **Step 3: Implement repository methods**
 
 Create `apps/api/src/ai/ai.repository.ts` with methods:
 
@@ -320,7 +322,7 @@ rejectExtraction(extractionId: string, userId: string, reason?: string)
 
 Keep Prisma querying in the repository. Do not put Ledger Policy checks here.
 
-- [ ] **Step 4: Verify repository tests**
+- [x] **Step 4: Verify repository tests**
 
 Run:
 
@@ -347,7 +349,7 @@ Expected: PASS.
 - Create: `apps/api/src/ai/ai.module.ts`
 - Modify: `apps/api/src/app.module.ts`
 
-- [ ] **Step 1: Write DTO tests**
+- [x] **Step 1: Write DTO tests**
 
 Create `apps/api/src/ai/ai.dto.spec.ts` covering:
 
@@ -366,7 +368,7 @@ pnpm --filter @bookkeeping/api test -- ai.dto.spec.ts
 
 Expected before DTO implementation: FAIL.
 
-- [ ] **Step 2: Implement DTOs**
+- [x] **Step 2: Implement DTOs**
 
 Implement:
 
@@ -393,7 +395,7 @@ export class ParseAiTextDto {
 
 Confirm DTO must allow only `ledgerId`, `accountId`, `categoryId`, `amount`, `occurredAt`, `visibility`, and `note`. It must not expose `source`.
 
-- [ ] **Step 3: Write service tests**
+- [x] **Step 3: Write service tests**
 
 Create `apps/api/src/ai/ai.service.spec.ts` covering:
 
@@ -413,7 +415,7 @@ pnpm --filter @bookkeeping/api test -- ai.service.spec.ts
 
 Expected before implementation: FAIL.
 
-- [ ] **Step 4: Implement internal client and service**
+- [x] **Step 4: Implement internal client and service**
 
 Implement `AiInternalClient` as a small injectable wrapper around `fetch` with `AI_SERVICE_BASE_URL` from config. It calls only:
 
@@ -432,7 +434,7 @@ Implement `AiService` so:
 - It confirms candidates by calling a trusted transaction creation path with `source = ai_text`.
 - It rejects candidates by setting status to `rejected`.
 
-- [ ] **Step 5: Write controller tests**
+- [x] **Step 5: Write controller tests**
 
 Create `apps/api/src/ai/ai.controller.spec.ts` covering:
 
@@ -450,7 +452,7 @@ pnpm --filter @bookkeeping/api test -- ai.controller.spec.ts
 
 Expected before controller implementation: FAIL.
 
-- [ ] **Step 6: Implement controller and module**
+- [x] **Step 6: Implement controller and module**
 
 Routes:
 
@@ -464,7 +466,7 @@ POST /ai/extractions/:extractionId/reject
 
 All routes use `JwtAuthGuard`. Register `AiModule` in `AppModule`.
 
-- [ ] **Step 7: Verify AI module**
+- [x] **Step 7: Verify AI module**
 
 Run:
 
@@ -484,7 +486,7 @@ Expected: all commands exit 0.
 - Modify: `apps/api/src/transactions/transactions.service.spec.ts`
 - Modify: `docs/modules/transactions/流水说明.md`
 
-- [ ] **Step 1: Write failing transaction service test**
+- [x] **Step 1: Write failing transaction service test**
 
 Add a test proving internal AI confirmation can create a transaction with `source = ai_text` while public create DTO still rejects `source`.
 
@@ -496,7 +498,7 @@ pnpm --filter @bookkeeping/api test -- transactions.service.spec.ts transactions
 
 Expected before implementation: FAIL for the new internal source test; existing public DTO test still passes.
 
-- [ ] **Step 2: Add trusted internal creation method**
+- [x] **Step 2: Add trusted internal creation method**
 
 Add a service method such as:
 
@@ -511,7 +513,7 @@ This method must:
 - Preserve account balance transaction behavior.
 - Not expose `source` to public controller DTOs.
 
-- [ ] **Step 3: Verify transaction tests**
+- [x] **Step 3: Verify transaction tests**
 
 Run:
 
@@ -529,7 +531,7 @@ Expected: PASS.
 - Modify: `apps/api/src/admin/admin.service.spec.ts`
 - Modify: `docs/modules/admin/Admin后台接口说明.md`
 
-- [ ] **Step 1: Write failing admin service test**
+- [x] **Step 1: Write failing admin service test**
 
 Update `admin.service.spec.ts` so `listAiTasks()` returns real task summaries:
 
@@ -557,11 +559,11 @@ pnpm --filter @bookkeeping/api test -- admin.service.spec.ts
 
 Expected before implementation: FAIL because M3 returns an empty stand-in response.
 
-- [ ] **Step 2: Implement repository query**
+- [x] **Step 2: Implement repository query**
 
 Add a Prisma query against `aiTask.findMany()` with `take`, `skip`, and `orderBy: { createdAt: 'desc' }`. Do not return `inputText`, `errorMessage`, or `rawResult` in admin summaries.
 
-- [ ] **Step 3: Verify admin tests**
+- [x] **Step 3: Verify admin tests**
 
 Run:
 
@@ -579,7 +581,7 @@ Expected: PASS.
 - Modify or create: `packages/api-client/test/ai-client.test.mjs`
 - Modify: `docs/modules/shared-packages/共享包说明.md`
 
-- [ ] **Step 1: Write failing API client tests**
+- [x] **Step 1: Write failing API client tests**
 
 Create or extend `packages/api-client/test/ai-client.test.mjs` to verify:
 
@@ -598,7 +600,7 @@ pnpm --filter @bookkeeping/api-client test
 
 Expected before implementation if tests are new: FAIL until any missing request behavior is added. If existing methods already satisfy tests, PASS and keep the tests as coverage.
 
-- [ ] **Step 2: Align shared contracts**
+- [x] **Step 2: Align shared contracts**
 
 Ensure shared types include:
 
@@ -633,7 +635,7 @@ export interface AiExtractionSummary {
 
 Do not add FastAPI URLs or internal service config to shared packages.
 
-- [ ] **Step 3: Verify packages**
+- [x] **Step 3: Verify packages**
 
 Run:
 
@@ -776,7 +778,7 @@ Expected: PASS.
 - Modify: `docs/modules/ai/AI文本记账说明.md`
 - Modify: `docs/modules/shared-packages/共享包说明.md`
 
-- [ ] **Step 1: Sync Chinese docs**
+- [x] **Step 1: Sync Chinese docs**
 
 Update docs to state:
 
@@ -786,7 +788,7 @@ Update docs to state:
 - FastAPI remains internal-only and candidate-only.
 - `GET /admin/ai/tasks` reads real summaries after `ai_tasks` exists.
 
-- [ ] **Step 2: Run final verification**
+- [x] **Step 2: Run final verification**
 
 Run:
 
@@ -813,7 +815,7 @@ pytest
 
 Expected: all commands exit 0.
 
-- [ ] **Step 3: Commit M4 implementation**
+- [x] **Step 3: Commit M4 implementation**
 
 Run:
 
