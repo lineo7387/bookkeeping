@@ -11,8 +11,11 @@ export const useAdminSessionStore = defineStore('adminSession', {
     setAccessToken(accessToken: string) {
       this.accessToken = accessToken
     },
-    clearAccessToken() {
+    clearSession() {
       this.accessToken = null
+    },
+    clearAccessToken() {
+      this.clearSession()
     },
   },
   persist: {

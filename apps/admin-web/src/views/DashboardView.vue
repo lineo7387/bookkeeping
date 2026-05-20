@@ -6,6 +6,7 @@ import {
   CircleDollarSign,
   DatabaseZap,
   Home,
+  LogOut,
   RefreshCw,
   Search,
   ShieldCheck,
@@ -17,6 +18,10 @@ import StatCard from '../components/dashboard/StatCard.vue'
 import TaskPanel from '../components/dashboard/TaskPanel.vue'
 import ClayButton from '../components/ui/ClayButton.vue'
 import type { DashboardStatItem } from '../services/adminDashboard'
+
+defineEmits<{
+  logout: []
+}>()
 
 const navItems = [
   { label: '总览', icon: Home, active: true },
@@ -97,6 +102,10 @@ onMounted(() => {
           </label>
           <ClayButton variant="secondary" aria-label="查看通知">
             <Bell :size="20" aria-hidden="true" />
+          </ClayButton>
+          <ClayButton variant="secondary" @click="$emit('logout')">
+            <LogOut :size="20" aria-hidden="true" />
+            <span>退出</span>
           </ClayButton>
           <ClayButton :disabled="isLoading" @click="refresh">
             <RefreshCw :size="20" aria-hidden="true" :class="{ 'animate-spin': isLoading }" />

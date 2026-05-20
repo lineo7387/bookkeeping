@@ -177,6 +177,22 @@ export interface PaginatedItems<T> {
   offset: number;
 }
 
+export interface PublicUser {
+  id: string;
+  email: string;
+  nickname: string;
+  avatarUrl: string | null;
+  status: 'active' | 'disabled';
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AuthResult {
+  user: PublicUser;
+  accessToken: string;
+  refreshToken: string;
+}
+
 export interface AdminUserSummary {
   id: string;
   email: string;

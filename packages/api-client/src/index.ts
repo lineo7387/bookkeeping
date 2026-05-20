@@ -13,6 +13,7 @@ import type {
   ApiResponse,
   PaginatedItems,
   ConfirmAiExtractionResult,
+  AuthResult,
 } from '@bookkeeping/shared-types';
 
 export interface BookkeepingApiClientOptions {
@@ -27,6 +28,11 @@ export interface AiTextParseRequest {
   locale?: string;
   timezone?: string;
   defaultCurrency?: string;
+}
+
+export interface LoginRequest {
+  email: string;
+  password: string;
 }
 
 export interface ConfirmAiExtractionRequest {
@@ -70,6 +76,13 @@ export class BookkeepingApiClient {
     if (!this.fetchImpl) {
       throw new Error('A fetch implementation is required.');
     }
+  }
+
+  login(body: LoginRequest): Promise<ApiResponse<AuthResult>> {
+    return this.request<AuthResult>('/auth/login', {
+      method: 'POST',
+      body,
+    });
   }
 
   parseAiText(
@@ -364,6 +377,7 @@ export type {
   AiExtractionSummary,
   AiTaskDetail,
   AiTextParseResult,
+  AuthResult,
   ApiError,
   ApiResponse,
   ConfirmAiExtractionResult,
