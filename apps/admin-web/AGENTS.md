@@ -81,7 +81,7 @@ src/
 - 后续接入真实接口时，只能通过 NestJS API。
 - 优先通过 `@bookkeeping/api-client` 访问后端，不在组件中直接拼 FastAPI 或内部服务地址。
 - API 响应类型优先来自 `@bookkeeping/shared-types`。
-- 本地调试默认读取 `VITE_API_BASE_URL` 作为 NestJS API baseUrl，未配置时使用 `/api`。
+- 本地调试默认读取 `VITE_API_BASE_URL` 作为 NestJS API baseUrl，未配置时使用 `/api` 并由 Vite dev server 代理到 `http://127.0.0.1:3000`。
 - 后台 Web 已接入 Pinia 和 `pinia-plugin-persistedstate`；会话 token、导航偏好和筛选偏好可进入 store，用户列表、审计日志等敏感查询结果不得持久化。
 - `@bookkeeping/api-client` 是跨应用共享 SDK；后台 Web 必须通过 `src/services/apiClient.ts` 这类本应用适配层注入 token、baseUrl 和后续缓存策略，不要在页面组件中直接创建共享 client。
 

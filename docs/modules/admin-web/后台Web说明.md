@@ -45,7 +45,7 @@
 - `apps/admin-web/src/services/adminDashboard.ts` 负责把 API 响应转换为页面统计卡、AI 任务队列、审计活动和状态提示。
 - `apps/admin-web/src/composables/useAdminDashboard.ts` 负责加载状态、错误状态和刷新动作。
 - `DashboardView.vue` 只负责页面组合，不直接拼接后端 URL。
-- 本地调试默认使用 `VITE_API_BASE_URL` 作为 NestJS API baseUrl；未配置时使用 `/api`。
+- 本地调试默认使用 `VITE_API_BASE_URL` 作为 NestJS API baseUrl；未配置时使用 `/api`，由 Vite dev server 代理到 `http://127.0.0.1:3000`。
 - 系统管理员 access token 由 `stores/adminSession.ts` 的 Pinia store 管理，并通过 `pinia-plugin-persistedstate` 持久化到 `bookkeeping_admin_session`。后台认证 UI 属于后续独立功能，不能在 M3 中临时绕过 `SystemAdminGuard`。
 
 ## 状态管理
