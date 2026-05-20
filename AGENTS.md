@@ -59,11 +59,11 @@
 ## 当前工程状态
 
 - 已初始化 pnpm workspace。
-- `apps/api` 已完成 M1、M1.5、M2 账户余额流水联动，M3 基础统计 API、审计日志基础写入与业务接入能力和后台只读 Admin API 基础能力，以及 M4 AI 文本记账 NestJS 闭环首版：认证、会话、用户资料、账本、成员角色、Ledger Policy、账户、分类、流水基础闭环、正式流水联动账户余额、月度收支、分类占比、账户余额统计、成员消费统计、`audit_logs` Prisma 模型、`AuditLogsModule`、账本/成员/账户/分类/流水写操作审计、`users.is_system_admin`、`SystemAdminGuard`、只读 Admin API、`ai_tasks`、`ai_extractions`、`AiModule`、文本解析任务、候选保存、确认/拒绝和对应单元测试。
+- `apps/api` 已完成 M1、M1.5、M2 账户余额流水联动，M3 基础统计 API、审计日志基础写入与业务接入能力和后台只读 Admin API 基础能力，以及 M4 AI 文本记账 NestJS 闭环首版和后续加固：认证、会话、用户资料、账本、成员角色、Ledger Policy、账户、分类、流水基础闭环、正式流水联动账户余额、月度收支、分类占比、账户余额统计、成员消费统计、`audit_logs` Prisma 模型、`AuditLogsModule`、账本/成员/账户/分类/流水写操作审计、`users.is_system_admin`、`SystemAdminGuard`、只读 Admin API、`ai_tasks`、`ai_extractions`、`AiModule`、文本解析任务、候选保存、确认/拒绝、内部 FastAPI 调用超时与响应校验、AI 确认事务内审计写入、`/admin/ai/tasks` 状态/类型筛选和对应单元测试。
 - `apps/admin-web` 已创建 Vue 3 后台首页，并已通过 `@bookkeeping/api-client` 接入 M3/M4 后台只读 Admin API，展示用户、账本、真实 AI 任务摘要和审计日志首屏分页样本。
 - `packages/shared-types` 已补充账户、分类、流水摘要、交易来源、基础统计、AI 任务、AI 候选和后台只读响应类型。
-- `packages/api-client` 已创建面向 NestJS 对外 API 的轻量请求客户端，当前封装 AI 文本解析、AI 任务查询、候选确认/拒绝和 Admin 只读列表入口。
-- `apps/ai-service` 已用 `uv` 创建 FastAPI 内部服务，并已提供 M4 文本记账确定性 MVP parser。`apps/mobile`、`packages/validation`、`packages/config` 尚未创建代码脚手架。
+- `packages/api-client` 已创建面向 NestJS 对外 API 的轻量请求客户端，当前封装 AI 文本解析、AI 任务查询、候选确认/拒绝和 Admin 只读列表入口；AI 候选确认可见性已收窄为 `ledger | private`，Admin AI 任务列表支持 `status` / `type` 筛选参数。
+- `apps/ai-service` 已用 `uv` 创建 FastAPI 内部服务，并已提供 M4 文本记账确定性 MVP parser；当前文本候选只产出 `income | expense`，不进入 transfer 和 M5 票据 OCR。`apps/mobile`、`packages/validation`、`packages/config` 尚未创建代码脚手架。
 
 ## 新对话建议
 
@@ -74,4 +74,4 @@ git status --short --branch
 git log --oneline -8
 ```
 
-当前分支 `codex/m4-ai-text-accounting` 已完成 M4 AI 文本记账 NestJS 闭环首版和 FastAPI 确定性 MVP parser。继续开发时优先检查是否需要做真实端到端联调、低置信度候选补全、任务筛选或后台展示增强；不要跳到 M5 票据 OCR，也不要让前端或 `api-client` 直接调用 FastAPI。开始新功能前应先补或读取对应中文模块文档。
+当前分支 `codex/m4-ai-text-accounting` 已完成 M4 AI 文本记账 NestJS 闭环首版、FastAPI 确定性 MVP parser，以及后续加固提交 `baa7470 fix: harden m4 ai text follow-up`。继续开发时优先做真实端到端联调脚本/集成测试、低置信度候选补全语义、Admin AI 任务筛选展示增强或 M4 文档运行示例；不要跳到 M5 票据 OCR，不要做移动端页面，也不要让前端或 `api-client` 直接调用 FastAPI。开始新功能前应先补或读取对应中文模块文档。
