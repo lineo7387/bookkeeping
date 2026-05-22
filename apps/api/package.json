@@ -5,6 +5,7 @@
   "main": "dist/src/main",
   "scripts": {
     "admin:bootstrap": "node scripts/bootstrap-admin.mjs",
+    "ai:e2e:text": "node scripts/m4-ai-text-e2e.mjs",
     "build": "nest build",
     "dev": "nest start --watch",
     "prisma": "prisma",

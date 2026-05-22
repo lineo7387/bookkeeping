@@ -8,6 +8,8 @@
 
 本地开发可通过 `pnpm --filter @bookkeeping/api admin:bootstrap -- --email <email> --password <password>` 创建或提权系统管理员账号。该脚本只用于本地/运维 bootstrap，不是公开 API。
 
+M4 文本记账本地闭环可在 FastAPI、NestJS 和 PostgreSQL 均启动后运行 `pnpm e2e:m4:ai-text`。该脚本只调用 NestJS 对外 API，不能改成前端、后台 Web、移动端或 `@bookkeeping/api-client` 直接请求 FastAPI。
+
 ## 修改前检查
 
 修改本目录前，应先阅读：

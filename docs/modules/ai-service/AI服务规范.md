@@ -387,6 +387,16 @@ curl -sS http://127.0.0.1:8000/internal/ai/text-transaction \
 - 候选被 NestJS 拒绝落库：检查 `candidate.type` 是否只使用 `income | expense`、`confidence` 是否在 `0..1`、金额是否使用字符串，且响应没有额外创建正式流水的语义。
 - 日志排查：日志中可以记录 `taskId`、`ledgerId`、状态、耗时和错误码；不得输出完整用户输入、完整 `rawResult`、token、API Key 或服务间密钥。
 
+### 4. NestJS 闭环脚本
+
+M4 文本记账可使用仓库根目录脚本做本地闭环联调：
+
+```bash
+pnpm e2e:m4:ai-text
+```
+
+该脚本只请求 NestJS 对外 API，并通过 NestJS 间接触发 FastAPI 内部契约。不要把脚本中的流程改成前端、后台 Web、移动端或 `@bookkeeping/api-client` 直接请求 FastAPI。
+
 ## Future Extensions
 
 - 增加消费洞察、预算提醒、异常支出检测和对话式账本查询。

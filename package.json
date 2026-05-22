@@ -6,6 +6,7 @@
   "scripts": {
     "build": "pnpm -r --if-present build",
     "dev": "pnpm -r --parallel --if-present dev",
+    "e2e:m4:ai-text": "pnpm --filter @bookkeeping/api ai:e2e:text",
     "hooks:install": "git config core.hooksPath .githooks",
     "lint": "pnpm -r --if-present lint",
     "format": "pnpm -r --if-present format",

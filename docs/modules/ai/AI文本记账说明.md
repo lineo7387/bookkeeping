@@ -358,6 +358,36 @@ curl -sS http://127.0.0.1:3000/api/ai/extractions/<extractionId>/reject \
 
 拒绝后只更新候选状态，不创建正式流水。
 
+### 4. 使用本地端到端脚本
+
+仓库提供了 M4 文本记账本地联调脚本，用于把上面的 NestJS 对外 API 调用串起来：
+
+```bash
+pnpm e2e:m4:ai-text
+```
+
+脚本只访问 `http://127.0.0.1:3000/api` 形式的 NestJS 对外 API，不直接访问 FastAPI。运行前仍需先启动 FastAPI 和 NestJS，并确保 NestJS 的 `AI_SERVICE_BASE_URL` 指向 FastAPI 内部服务。
+
+脚本会完成以下校验：
+
+- 注册或登录一个本地测试用户。
+- 通过 NestJS 创建个人账本、微信账户和支出分类。
+- 调用 `POST /ledgers/:ledgerId/ai/text-parse` 创建 AI 文本解析任务。
+- 确认候选并校验正式流水 `source = "ai_text"`。
+- 查询流水列表和账户余额，确认候选确认后只创建一条正式流水，并把账户余额从 `200.00` 调整到 `114.00`。
+
+可选参数：
+
+```bash
+pnpm e2e:m4:ai-text -- \
+  --api-url http://127.0.0.1:3000/api \
+  --email m4-ai-e2e@example.test \
+  --password LocalM4AiText123! \
+  --input-text "今天晚饭花了86，微信支付"
+```
+
+如果使用已存在邮箱，脚本会在注册返回“邮箱已注册”时改为登录；密码不匹配会按登录失败处理。脚本输出不会打印 access token 或 refresh token。
+
 ## 故障排查
 
 - `POST /ledgers/:ledgerId/ai/text-parse` 返回 `AI_TASK_FAILED`：先确认 FastAPI 进程是否启动、NestJS 的 `AI_SERVICE_BASE_URL` 是否指向正确端口、`AI_SERVICE_TIMEOUT_MS` 是否过短，再用上方 FastAPI curl 检查 `/internal/ai/text-transaction` 是否可达。
@@ -377,6 +407,7 @@ pnpm --filter @bookkeeping/api typecheck
 pnpm --filter @bookkeeping/api build
 pnpm --filter @bookkeeping/api-client test
 pnpm --filter @bookkeeping/shared-types build
+pnpm verify:scripts
 pnpm build
 pnpm test
 git diff --check
