@@ -10,6 +10,7 @@
 - `designer.md`：前端视觉设计系统。
 - `.codex/project-context.md`：AI/Agent 快速上下文。
 - `.codex/development-rules.md`：开发和文档规则。
+- `.codex/checklists/startup.md`、`.codex/checklists/handoff.md`：新对话启动和收尾短清单。
 - `docs/modules/agent-context/Agent协作上下文说明.md`：monorepo 分层 Agent 上下文维护规则。
 
 ## 全局硬规则
@@ -76,6 +77,7 @@
 - `packages/shared-types` 已补充账户、分类、流水摘要、交易来源、基础统计、认证响应、AI 任务、AI 候选和后台只读响应类型。
 - `packages/api-client` 已创建面向 NestJS 对外 API 的轻量请求客户端，当前封装登录、AI 文本解析、AI 任务查询、候选确认/拒绝和 Admin 只读列表入口；AI 候选确认可见性已收窄为 `ledger | private`，Admin AI 任务列表支持 `status` / `type` 筛选参数。
 - `apps/ai-service` 已用 `uv` 创建 FastAPI 内部服务，并已提供 M4 文本记账确定性 MVP parser；当前文本候选只产出 `income | expense`，不进入 transfer 和 M5 票据 OCR。M4 本地运行、NestJS-to-FastAPI 联调和故障排查示例已补充到中文模块文档。`apps/mobile`、`packages/validation`、`packages/config` 尚未创建代码脚手架。
+- 已补充 `.codex/checklists/startup.md` 和 `.codex/checklists/handoff.md`，用于减少新对话重复粘贴上下文；根目录已提供 `verify:*` 脚本和轻量 `.githooks/pre-commit`，`apps/api` 已提供本地系统管理员 `admin:bootstrap` 脚本。
 
 ## 新对话建议
 
@@ -86,4 +88,4 @@ git status --short --branch
 git log --oneline -8
 ```
 
-当前分支 `codex/m4-ai-text-accounting` 已完成 M4 AI 文本记账 NestJS 闭环首版、FastAPI 确定性 MVP parser、后续加固提交 `baa7470 fix: harden m4 ai text follow-up`，并已补充 M4 本地运行、NestJS-to-FastAPI 联调和故障排查文档；本地启动验证已修复 Prisma 7 adapter 和 AI 内部 client provider wiring 问题。后台 Web 已补系统管理员登录页和 Pinia access token 会话入口。继续开发时优先做真实端到端联调脚本/集成测试、低置信度候选补全语义或 Admin AI 任务筛选展示增强；不要跳到 M5 票据 OCR，不要做移动端页面，也不要让前端或 `api-client` 直接调用 FastAPI。开始新功能前应先补或读取对应中文模块文档。
+当前分支 `codex/m4-ai-text-accounting` 已完成 M4 AI 文本记账 NestJS 闭环首版、FastAPI 确定性 MVP parser、后续加固提交 `baa7470 fix: harden m4 ai text follow-up`，并已补充 M4 本地运行、NestJS-to-FastAPI 联调和故障排查文档；本地启动验证已修复 Prisma 7 adapter 和 AI 内部 client provider wiring 问题。后台 Web 已补系统管理员登录页和 Pinia access token 会话入口；本地管理员可用 `pnpm --filter @bookkeeping/api admin:bootstrap -- --email <email> --password <password>` 创建或提权。继续开发时可先按 `.codex/checklists/startup.md` 启动，优先做真实端到端联调脚本/集成测试、低置信度候选补全语义或 Admin AI 任务筛选展示增强；不要跳到 M5 票据 OCR，不要做移动端页面，也不要让前端或 `api-client` 直接调用 FastAPI。开始新功能前应先补或读取对应中文模块文档。

@@ -8,6 +8,7 @@
 - `development-rules.md`：开发、文档、测试、提交和脚手架协作规则。
 - `scaffolding-protocol.md`：项目创建阶段的命令提示和职责边界。
 - `ai-service-guidelines.md`：FastAPI AI 服务、模型调用和候选结果规范。
+- `checklists/`：新对话启动和收尾交接的短清单，用于减少重复粘贴长提示词。
 - `prompts/`：后续可复用的提示词模板。
 
 ## 使用原则

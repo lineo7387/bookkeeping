@@ -6,6 +6,8 @@
 
 当前已完成认证与会话、用户资料、账本与成员权限、账户、分类、流水基础闭环、M2 账户余额流水联动、基础统计 API、审计日志基础写入与业务接入能力、后台只读 Admin API 基础能力，以及 M4 AI 文本记账 NestJS 闭环和后续加固。Prisma 7 运行时通过 PostgreSQL driver adapter 初始化。正式流水创建、更新、软删除和 AI 候选确认必须在同一个 Prisma transaction 内处理核心状态和相关账户余额。
 
+本地开发可通过 `pnpm --filter @bookkeeping/api admin:bootstrap -- --email <email> --password <password>` 创建或提权系统管理员账号。该脚本只用于本地/运维 bootstrap，不是公开 API。
+
 ## 修改前检查
 
 修改本目录前，应先阅读：
@@ -107,6 +109,7 @@ src/
 pnpm --filter @bookkeeping/api test
 pnpm --filter @bookkeeping/api typecheck
 pnpm --filter @bookkeeping/api build
+pnpm verify:scripts
 ```
 
 窄范围改动可先运行对应 `.spec.ts`，完成前再运行相关包级验证。
