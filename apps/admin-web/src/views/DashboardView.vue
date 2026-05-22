@@ -38,7 +38,19 @@ const statIcons = {
   auditLogs: DatabaseZap,
 } satisfies Record<DashboardStatItem['key'], typeof Users>
 
-const { viewModel, isLoading, errorMessage, lastLoadedAt, refresh } = useAdminDashboard()
+const {
+  viewModel,
+  aiTaskFilters,
+  aiTaskStatusOptions,
+  aiTaskTypeOptions,
+  activeAiTaskFilterCount,
+  isLoading,
+  errorMessage,
+  lastLoadedAt,
+  refresh,
+  updateAiTaskStatusFilter,
+  updateAiTaskTypeFilter,
+} = useAdminDashboard()
 
 const stats = computed(() =>
   viewModel.value.stats.map((stat) => ({
@@ -145,7 +157,18 @@ onMounted(() => {
       </section>
 
       <section class="grid grid-cols-[minmax(0,1.1fr)_minmax(320px,0.9fr)] gap-6 max-[860px]:grid-cols-1">
-        <TaskPanel :tasks="viewModel.tasks" />
+        <TaskPanel
+          :tasks="viewModel.tasks"
+          :task-count="viewModel.taskResultCount"
+          :selected-status="aiTaskFilters.status"
+          :selected-type="aiTaskFilters.type"
+          :status-options="aiTaskStatusOptions"
+          :type-options="aiTaskTypeOptions"
+          :active-filter-count="activeAiTaskFilterCount"
+          :is-loading="isLoading"
+          @status-change="updateAiTaskStatusFilter"
+          @type-change="updateAiTaskTypeFilter"
+        />
         <ActivityPanel :activities="viewModel.activities" />
       </section>
     </main>

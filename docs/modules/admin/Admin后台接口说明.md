@@ -42,8 +42,6 @@ Query:
 
 - `limit`：每页数量，默认 20，范围 1-100。
 - `offset`：偏移量，默认 0。
-- `status`：可选，按 AI 任务状态筛选，允许 `pending`、`processing`、`succeeded`、`failed`。
-- `type`：可选，按 AI 任务类型筛选，允许 `text_parse`、`receipt_ocr`、`classify`、`insight`。
 
 Response data:
 
@@ -74,6 +72,8 @@ Query:
 
 - `limit`：每页数量，默认 20，范围 1-100。
 - `offset`：偏移量，默认 0。
+- `status`：可选，按 AI 任务状态筛选，允许 `pending`、`processing`、`succeeded`、`failed`。
+- `type`：可选，按 AI 任务类型筛选，允许 `text_parse`、`receipt_ocr`、`classify`、`insight`。
 
 Response data:
 

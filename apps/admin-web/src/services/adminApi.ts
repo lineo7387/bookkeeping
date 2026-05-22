@@ -8,6 +8,7 @@ import type {
   PaginatedItems,
 } from '@bookkeeping/shared-types'
 import { adminApiClient } from './apiClient'
+import { createAdminAiTaskQuery, defaultAdminAiTaskFilters, type AdminAiTaskFilters } from './adminDashboard'
 
 export interface AdminDashboardData {
   users: PaginatedItems<AdminUserSummary>
@@ -17,13 +18,15 @@ export interface AdminDashboardData {
 }
 
 export async function fetchAdminDashboardData(
+  aiTaskFilters: AdminAiTaskFilters = defaultAdminAiTaskFilters,
   client: BookkeepingApiClient = adminApiClient,
 ): Promise<AdminDashboardData> {
   const query = { limit: 20, offset: 0 }
+  const aiTaskQuery = createAdminAiTaskQuery(aiTaskFilters)
   const [users, ledgers, aiTasks, auditLogs] = await Promise.all([
     client.listAdminUsers(query),
     client.listAdminLedgers(query),
-    client.listAdminAiTasks(query),
+    client.listAdminAiTasks(aiTaskQuery),
     client.listAdminAuditLogs(query),
   ])
 

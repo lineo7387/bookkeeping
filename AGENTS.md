@@ -73,7 +73,7 @@
 
 - 已初始化 pnpm workspace。
 - `apps/api` 已完成 M1、M1.5、M2 账户余额流水联动，M3 基础统计 API、审计日志基础写入与业务接入能力和后台只读 Admin API 基础能力，以及 M4 AI 文本记账 NestJS 闭环首版和后续加固：认证、会话、用户资料、账本、成员角色、Ledger Policy、账户、分类、流水基础闭环、正式流水联动账户余额、月度收支、分类占比、账户余额统计、成员消费统计、`audit_logs` Prisma 模型、`AuditLogsModule`、账本/成员/账户/分类/流水写操作审计、`users.is_system_admin`、`SystemAdminGuard`、只读 Admin API、`ai_tasks`、`ai_extractions`、`AiModule`、文本解析任务、候选保存、确认/拒绝、内部 FastAPI 调用超时与响应校验、AI 确认事务内审计写入、`/admin/ai/tasks` 状态/类型筛选、Prisma 7 PostgreSQL adapter 启动修复和应用模块 provider wiring 测试。
-- `apps/admin-web` 已创建 Vue 3 后台登录页和后台首页，并已通过 `@bookkeeping/api-client` 接入 NestJS 登录接口和 M3/M4 后台只读 Admin API；系统管理员登录后 access token 写入 Pinia 持久化会话，首页展示用户、账本、真实 AI 任务摘要和审计日志首屏分页样本；本地 Vite dev server 已配置 `/api` 代理到 `http://127.0.0.1:3000`。
+- `apps/admin-web` 已创建 Vue 3 后台登录页和后台首页，并已通过 `@bookkeeping/api-client` 接入 NestJS 登录接口和 M3/M4 后台只读 Admin API；系统管理员登录后 access token 写入 Pinia 持久化会话，首页展示用户、账本、真实 AI 任务摘要和审计日志首屏分页样本，AI 任务队列支持状态/类型筛选；本地 Vite dev server 已配置 `/api` 代理到 `http://127.0.0.1:3000`。
 - `packages/shared-types` 已补充账户、分类、流水摘要、交易来源、基础统计、认证响应、AI 任务、AI 候选和后台只读响应类型。
 - `packages/api-client` 已创建面向 NestJS 对外 API 的轻量请求客户端，当前封装登录、AI 文本解析、AI 任务查询、候选确认/拒绝和 Admin 只读列表入口；AI 候选确认可见性已收窄为 `ledger | private`，Admin AI 任务列表支持 `status` / `type` 筛选参数。
 - `apps/ai-service` 已用 `uv` 创建 FastAPI 内部服务，并已提供 M4 文本记账确定性 MVP parser；当前文本候选只产出 `income | expense`，不进入 transfer 和 M5 票据 OCR。M4 本地运行、NestJS-to-FastAPI 联调和故障排查示例已补充到中文模块文档。`apps/mobile`、`packages/validation`、`packages/config` 尚未创建代码脚手架。

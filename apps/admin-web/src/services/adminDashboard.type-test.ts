@@ -1,11 +1,13 @@
 import type {
+  AiTaskStatus,
+  AiTaskType,
   AdminAiTaskSummary,
   AdminAuditLogSummary,
   AdminLedgerSummary,
   AdminUserSummary,
   PaginatedItems,
 } from '@bookkeeping/shared-types'
-import { createDashboardViewModel } from './adminDashboard'
+import { createAdminAiTaskQuery, createDashboardViewModel } from './adminDashboard'
 
 const users: PaginatedItems<AdminUserSummary> = {
   items: [
@@ -72,4 +74,20 @@ export const adminDashboardViewModelTypeCheck = createDashboardViewModel({
   ledgers,
   aiTasks,
   auditLogs,
+})
+
+export const adminDashboardTaskResultCountTypeCheck =
+  adminDashboardViewModelTypeCheck.taskResultCount
+
+const statusFilter: AiTaskStatus = 'failed'
+const typeFilter: AiTaskType = 'text_parse'
+
+export const adminAiTaskFilteredQueryTypeCheck = createAdminAiTaskQuery({
+  status: statusFilter,
+  type: typeFilter,
+})
+
+export const adminAiTaskDefaultQueryTypeCheck = createAdminAiTaskQuery({
+  status: 'all',
+  type: 'all',
 })

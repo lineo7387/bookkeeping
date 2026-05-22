@@ -1,8 +1,42 @@
-import type { AdminAiTaskSummary, AdminAuditLogSummary } from '@bookkeeping/shared-types'
+import type {
+  AiTaskStatus,
+  AiTaskType,
+  AdminAiTaskSummary,
+  AdminAuditLogSummary,
+} from '@bookkeeping/shared-types'
+import type { AdminAiTasksQuery } from '@bookkeeping/api-client'
 import type { AdminDashboardData } from './adminApi'
 
 export type DashboardTone = 'violet' | 'blue' | 'pink' | 'green'
 export type DashboardTaskStatus = 'warning' | 'info' | 'success'
+export type AdminAiTaskStatusFilter = AiTaskStatus | 'all'
+export type AdminAiTaskTypeFilter = AiTaskType | 'all'
+
+export interface AdminAiTaskFilters {
+  status: AdminAiTaskStatusFilter
+  type: AdminAiTaskTypeFilter
+}
+
+export const adminAiTaskStatusOptions = [
+  { value: 'all', label: '全部状态' },
+  { value: 'pending', label: '待处理' },
+  { value: 'processing', label: '处理中' },
+  { value: 'succeeded', label: '成功' },
+  { value: 'failed', label: '失败' },
+] as const satisfies ReadonlyArray<{ value: AdminAiTaskStatusFilter; label: string }>
+
+export const adminAiTaskTypeOptions = [
+  { value: 'all', label: '全部类型' },
+  { value: 'text_parse', label: '文本记账' },
+  { value: 'receipt_ocr', label: '票据识别' },
+  { value: 'classify', label: '分类推荐' },
+  { value: 'insight', label: '消费洞察' },
+] as const satisfies ReadonlyArray<{ value: AdminAiTaskTypeFilter; label: string }>
+
+export const defaultAdminAiTaskFilters: AdminAiTaskFilters = {
+  status: 'all',
+  type: 'all',
+}
 
 export interface DashboardStatItem {
   key: 'users' | 'ledgers' | 'aiTasks' | 'auditLogs'
@@ -32,6 +66,7 @@ export interface DashboardHealthItem {
 export interface DashboardViewModel {
   stats: DashboardStatItem[]
   tasks: DashboardTaskItem[]
+  taskResultCount: number
   activities: DashboardActivityItem[]
   healthItems: DashboardHealthItem[]
 }
@@ -75,12 +110,22 @@ export function createDashboardViewModel(data: AdminDashboardData): DashboardVie
       },
     ],
     tasks: createTaskItems(data.aiTasks.items),
+    taskResultCount: data.aiTasks.items.length,
     activities: createActivityItems(data.auditLogs.items),
     healthItems: [
       { tone: 'green', label: 'NestJS Admin API 已接入' },
       { tone: 'blue', label: '后台 Web 仅调用对外 API' },
       { tone: 'violet', label: 'AI 任务读取真实摘要' },
     ],
+  }
+}
+
+export function createAdminAiTaskQuery(filters: AdminAiTaskFilters): AdminAiTasksQuery {
+  return {
+    limit: 20,
+    offset: 0,
+    ...(filters.status === 'all' ? {} : { status: filters.status }),
+    ...(filters.type === 'all' ? {} : { type: filters.type }),
   }
 }
 
@@ -99,6 +144,7 @@ export function createEmptyDashboardViewModel(): DashboardViewModel {
         status: 'info',
       },
     ],
+    taskResultCount: 0,
     activities: [],
     healthItems: [
       { tone: 'blue', label: '准备连接 Admin API' },
