@@ -8,9 +8,11 @@
 
 - `docs/superpowers/specs/2026-05-17-bookkeeping-platform-design.md`：产品、架构、数据库、权限、接口和迭代设计。
 - `designer.md`：前端视觉设计系统。
-- `.codex/project-context.md`：AI/Agent 快速上下文。
-- `.codex/development-rules.md`：开发和文档规则。
-- `.codex/checklists/startup.md`、`.codex/checklists/handoff.md`：新对话启动和收尾短清单。
+- `.agents/project-context.md`：AI/Agent 快速上下文。
+- `.agents/development-rules.md`：开发和文档规则。
+- `.agents/skills.md`：跨工具 skills 使用说明和降级规则。
+- `.agents/skills/`：当前项目推荐 skills 的仓库级副本。
+- `.agents/checklists/startup.md`、`.agents/checklists/handoff.md`：新对话启动和收尾短清单。
 - `docs/modules/agent-context/Agent协作上下文说明.md`：monorepo 分层 Agent 上下文维护规则。
 
 ## 全局硬规则
@@ -29,6 +31,8 @@
 - monorepo 子项目可以维护自己的 `AGENTS.md`，但只能补充局部规则，不能覆盖根目录硬规则。
 - 子项目 `AGENTS.md` 应保持短、准、局部化，避免重复整段根目录说明。
 - 推荐 Agent skills 由当前工作目录最近的 `AGENTS.md` 说明；根目录只保留全局协作边界。
+- 当前项目推荐 skills 已固定安装到 `.agents/skills/`；不要为了本项目修改个人全局 skills。
+- `.agents/` 是跨工具共享规则源；`.codex/`、`CLAUDE.md`、`GEMINI.md` 和 `.cursor/rules/` 只做工具适配入口，不维护独立规则。
 
 ## 分层 Agent 上下文
 
@@ -52,8 +56,9 @@
 1. 根目录 `AGENTS.md`
 2. 当前工作目录最近的 `AGENTS.md`
 3. `docs/superpowers/specs/2026-05-17-bookkeeping-platform-design.md`
-4. `.codex/development-rules.md`
-5. 对应功能的中文模块文档
+4. `.agents/development-rules.md`
+5. `.agents/skills.md`
+6. 对应功能的中文模块文档
 
 如果对应功能文档不存在，应先创建文档，再实现代码。
 
@@ -63,21 +68,22 @@
 
 1. 根目录 `AGENTS.md` 的当前工程状态和新对话建议。
 2. 当前工作目录最近的子项目 `AGENTS.md`。
-3. `.codex/project-context.md`。
-4. `.codex/development-rules.md`。
-5. `docs/handover/开发交接说明.md` 和相关模块中文文档。
+3. `.agents/project-context.md`。
+4. `.agents/development-rules.md`。
+5. `.agents/skills.md`。
+6. `docs/handover/开发交接说明.md` 和相关模块中文文档。
 
 如果本轮变更改变了里程碑状态、模块边界、验证命令、禁止事项、下一轮建议或可用接口，应同步更新上述文件中的对应内容。修改上下文后至少运行 `git diff --check`，并将上下文同步作为本地提交的一部分。
 
 ## 当前工程状态
 
 - 已初始化 pnpm workspace。
-- `apps/api` 已完成 M1、M1.5、M2 账户余额流水联动，M3 基础统计 API、审计日志基础写入与业务接入能力和后台只读 Admin API 基础能力，以及 M4 AI 文本记账 NestJS 闭环首版和后续加固：认证、会话、用户资料、账本、成员角色、Ledger Policy、账户、分类、流水基础闭环、正式流水联动账户余额、月度收支、分类占比、账户余额统计、成员消费统计、`audit_logs` Prisma 模型、`AuditLogsModule`、账本/成员/账户/分类/流水写操作审计、`users.is_system_admin`、`SystemAdminGuard`、只读 Admin API、`ai_tasks`、`ai_extractions`、`AiModule`、文本解析任务、候选保存、确认/拒绝、低置信度候选补全提示、内部 FastAPI 调用超时与响应校验、AI 确认事务内审计写入、`/admin/ai/tasks` 状态/类型筛选、M4 文本记账本地端到端脚本、Prisma 7 PostgreSQL adapter 启动修复和应用模块 provider wiring 测试。
+- `apps/api` 已完成 M1、M1.5、M2 账户余额流水联动，M3 基础统计 API、审计日志基础写入与业务接入能力和后台只读 Admin API 基础能力，以及 M4 AI 文本记账 NestJS 闭环首版和后续加固，以及 M5 票据 OCR 与文件：数据库新增 `TransactionAttachment` 模型，全局 `QueueModule`（BullMQ）和 `StorageModule`（MinIO S3）支持；Worker 处理器异步调度 FastAPI `/internal/ai/receipt-ocr` 处理流程，支持低置信度要素警告，并在流水确认事务中自动关联附件。
 - `apps/admin-web` 已创建 Vue 3 后台登录页、后台首页和独立 AI 任务列表页，并已通过 `@bookkeeping/api-client` 接入 NestJS 登录接口和 M3/M4 后台只读 Admin API；系统管理员登录后 access token 写入 Pinia 持久化会话，首页展示用户、账本、真实 AI 任务摘要和审计日志首屏分页样本，AI 任务队列和独立列表页支持状态/类型筛选；本地 Vite dev server 已配置 `/api` 代理到 `http://127.0.0.1:3000`。
-- `packages/shared-types` 已补充账户、分类、流水摘要、交易来源、基础统计、认证响应、AI 任务、AI 候选、低置信度候选补全字段和后台只读响应类型。
-- `packages/api-client` 已创建面向 NestJS 对外 API 的轻量请求客户端，当前封装登录、AI 文本解析、AI 任务查询、候选确认/拒绝和 Admin 只读列表入口；AI 候选确认可见性已收窄为 `ledger | private`，Admin AI 任务列表支持 `status` / `type` 筛选参数。
-- `apps/ai-service` 已用 `uv` 创建 FastAPI 内部服务，并已提供 M4 文本记账确定性 MVP parser；当前文本候选只产出 `income | expense`，不进入 transfer 和 M5 票据 OCR；金额可识别但分类/账户不明确时会返回低置信度候选和 `missingFields` / `reviewMessage`。M4 本地运行、NestJS-to-FastAPI 联调和故障排查示例已补充到中文模块文档。`apps/mobile`、`packages/validation`、`packages/config` 尚未创建代码脚手架。
-- 已补充 `.codex/checklists/startup.md` 和 `.codex/checklists/handoff.md`，用于减少新对话重复粘贴上下文；根目录已提供 `verify:*` 脚本、`e2e:m4:ai-text` 本地闭环联调脚本和轻量 `.githooks/pre-commit`，`apps/api` 已提供本地系统管理员 `admin:bootstrap` 脚本。
+- `packages/shared-types` 已补充账户、分类、流水摘要、交易来源、基础统计、认证响应、AI 任务、AI 候选、低置信度候选补全字段、后台只读响应类型以及 ReceiptOcrAcceptedResult / TransactionAttachmentSummary 类型。
+- `packages/api-client` 已创建面向 NestJS 对外 API 的轻量请求客户端，当前封装登录、AI 文本解析、AI 任务查询、候选确认/拒绝、Admin 只读列表入口以及 M5 `receiptOcr` 票据文件 Multipart 上传和请求客户端支持。
+- `apps/ai-service` 已用 `uv` 创建 FastAPI 内部服务，提供 M4 文本记账确定性 MVP parser 以及 M5 票据 Tesseract OCR 解析与服务；金额可识别但分类/账户不明确时会返回低置信度候选和 `missingFields` / `reviewMessage`。M4 和 M5 本地运行、NestJS-to-FastAPI 联调和故障排查示例已补充到中文模块文档。`apps/mobile`、`packages/validation`、`packages/config` 尚未创建代码脚手架。
+- 已迁移 `.agents/` 为跨工具共享规则源，并保留 `.codex/`、`CLAUDE.md`、`GEMINI.md` 和 `.cursor/rules/` 作为适配入口；当前推荐 skills 已安装到 `.agents/skills/`，`.agents/skills.md` 记录调用时机和跨工具降级规则；`.agents/checklists/startup.md` 和 `.agents/checklists/handoff.md` 用于减少新对话重复粘贴上下文。根目录已提供 `verify:*` 脚本、`e2e:m4:ai-text` 本地闭环联调脚本、`e2e:m5:receipt-ocr` 本地 OCR 联调脚本和轻量 `.githooks/pre-commit`，`apps/api` 已提供本地系统管理员 `admin:bootstrap` 脚本。
 
 ## 新对话建议
 
@@ -88,4 +94,4 @@ git status --short --branch
 git log --oneline -8
 ```
 
-当前 `main` 已合并 M4 AI 文本记账 NestJS 闭环首版、FastAPI 确定性 MVP parser、低置信度候选补全提示、独立 Admin AI 任务列表页和本地 `pnpm e2e:m4:ai-text` 闭环脚本；本地启动验证已修复 Prisma 7 adapter 和 AI 内部 client provider wiring 问题。后台 Web 已补系统管理员登录页和 Pinia access token 会话入口；本地管理员可用 `pnpm --filter @bookkeeping/api admin:bootstrap -- --email <email> --password <password>` 创建或提权。继续开发时可先按 `.codex/checklists/startup.md` 启动；M5 是票据 OCR 与文件，M6 规划为 AI 财务问答与洞察。开始新功能前应先补或读取对应中文模块文档，不要做移动端页面，也不要让前端或 `api-client` 直接调用 FastAPI。
+当前 `main` 已合并 M4 AI 文本记账 NestJS 闭环首版、FastAPI 确定性 MVP parser、低置信度候选补全提示、独立 Admin AI 任务列表页和本地 `pnpm e2e:m4:ai-text` 闭环脚本；本地启动验证已修复 Prisma 7 adapter 和 AI 内部 client provider wiring 问题。后台 Web 已补系统管理员登录页和 Pinia access token 会话入口；本地管理员可用 `pnpm --filter @bookkeeping/api admin:bootstrap -- --email <email> --password <password>` 创建或提权。继续开发时可先按 `.agents/checklists/startup.md` 启动；M5 是票据 OCR 与文件，M6 规划为 AI 财务问答与洞察。开始新功能前应先补或读取对应中文模块文档，不要做移动端页面，也不要让前端或 `api-client` 直接调用 FastAPI。

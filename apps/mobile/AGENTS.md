@@ -12,7 +12,7 @@
 
 1. 根目录 `AGENTS.md`
 2. `designer.md`
-3. `.codex/development-rules.md`
+3. `.agents/development-rules.md`
 4. 移动端相关中文模块文档；如果不存在，应先创建
 5. 涉及接口时，阅读 `docs/api/接口规范.md` 和对应业务模块文档
 

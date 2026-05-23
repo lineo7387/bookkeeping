@@ -38,7 +38,7 @@ Explicitly out of scope:
   - Modify: `docs/modules/api/NestJS服务说明.md`
   - Modify: `docs/modules/shared-packages/共享包说明.md`
   - Modify: `docs/handover/开发交接说明.md`
-  - Modify: `.codex/project-context.md`
+  - Modify: `.agents/project-context.md`
 
 - Prisma and NestJS AI module:
   - Modify: `apps/api/prisma/schema.prisma`
@@ -80,10 +80,10 @@ Explicitly out of scope:
 
 **Files:**
 - Existing: `AGENTS.md`
-- Existing: `.codex/project-context.md`
-- Existing: `.codex/development-rules.md`
-- Existing: `.codex/ai-service-guidelines.md`
-- Existing: `.codex/scaffolding-protocol.md`
+- Existing: `.agents/project-context.md`
+- Existing: `.agents/development-rules.md`
+- Existing: `.agents/ai-service-guidelines.md`
+- Existing: `.agents/scaffolding-protocol.md`
 - Existing: `docs/modules/ai/AI文本记账说明.md`
 - Existing: `docs/modules/ai-service/AI服务规范.md`
 - Existing: `docs/modules/transactions/流水说明.md`
@@ -773,7 +773,7 @@ Expected: PASS.
 ## Task 8: Docs, Context, And Full Verification
 
 **Files:**
-- Modify: `.codex/project-context.md`
+- Modify: `.agents/project-context.md`
 - Modify: `docs/handover/开发交接说明.md`
 - Modify: `docs/modules/api/NestJS服务说明.md`
 - Modify: `docs/modules/admin/Admin后台接口说明.md`
@@ -821,7 +821,7 @@ Expected: all commands exit 0.
 Run:
 
 ```bash
-git add .codex/project-context.md apps/api apps/ai-service packages/shared-types packages/api-client docs/modules docs/handover
+git add .agents/project-context.md apps/api apps/ai-service packages/shared-types packages/api-client docs/modules docs/handover
 git commit -m "feat: add m4 ai text accounting"
 ```
 

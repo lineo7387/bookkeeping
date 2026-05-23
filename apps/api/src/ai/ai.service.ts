@@ -20,6 +20,13 @@ import type {
   InternalAiTextResult,
   TextParseContext,
 } from './ai.types';
+import { InjectQueue } from '@nestjs/bullmq';
+import { Queue } from 'bullmq';
+import { randomUUID } from 'node:crypto';
+import { StorageService } from '../storage/storage.service';
+import { OCR_QUEUE_NAME, OCR_JOB_NAME, type OcrJobData } from './ocr-queue.constants';
+import { mimeToExtension } from './dto/receipt-ocr-file.filter';
+import type { ReceiptOcrAcceptedResult } from '@bookkeeping/shared-types';
 
 @Injectable()
 export class AiService {
@@ -28,7 +35,49 @@ export class AiService {
     private readonly ledgerPolicyService: LedgerPolicyService,
     private readonly aiInternalClient: AiInternalClient,
     private readonly transactionsService: TransactionsService,
+    private readonly storageService: StorageService,
+    @InjectQueue(OCR_QUEUE_NAME) private readonly ocrQueue: Queue<OcrJobData>,
   ) {}
+
+  async submitReceiptOcr(
+    userId: string,
+    ledgerId: string,
+    file: Express.Multer.File,
+  ): Promise<ReceiptOcrAcceptedResult> {
+    await this.requireCreateTransaction(userId, ledgerId);
+
+    const now = new Date();
+    const ext = mimeToExtension(file.mimetype);
+    const storageKey = `receipts/${ledgerId}/${now.getUTCFullYear()}/${String(now.getUTCMonth() + 1).padStart(2, '0')}/${randomUUID()}.${ext}`;
+    const bucket = 'bookkeeping-receipts';
+
+    await this.storageService.upload(bucket, storageKey, file.buffer, file.mimetype);
+
+    const task = await this.aiRepository.createReceiptOcrTask({
+      ledgerId,
+      userId,
+      inputFileUrl: storageKey,
+    });
+
+    await this.ocrQueue.add(OCR_JOB_NAME, {
+      taskId: task.id,
+      ledgerId,
+      userId,
+      storageKey,
+      mimeType: file.mimetype,
+    }, {
+      attempts: 3,
+      backoff: { type: 'exponential', delay: 5000 },
+      removeOnComplete: true,
+    });
+
+    return {
+      taskId: task.id,
+      ledgerId,
+      status: 'pending',
+      type: 'receipt_ocr',
+    };
+  }
 
   async parseAiText(userId: string, ledgerId: string, dto: ParseAiTextDto): Promise<AiTextParseResult> {
     await this.requireCreateTransaction(userId, ledgerId);
@@ -122,6 +171,21 @@ export class AiService {
       });
       if (!confirmed) {
         throw aiResourceNotFound();
+      }
+
+      // M5: Create attachment for OCR tasks
+      const task = await this.aiRepository.findTaskById(confirmed.taskId);
+      if (task && task.type === 'receipt_ocr' && task.extraction) {
+        const aiTask = await this.aiRepository.findRawTask(confirmed.taskId);
+        if (aiTask?.inputFileUrl) {
+          const extension = aiTask.inputFileUrl.split('.').pop() ?? '';
+          await this.aiRepository.createTransactionAttachment(tx as any, {
+            transactionId: transaction.id,
+            fileUrl: aiTask.inputFileUrl,
+            fileType: extension === 'jpg' || extension === 'jpeg' ? 'image/jpeg' : `image/${extension}`,
+            storageKey: aiTask.inputFileUrl,
+          });
+        }
       }
 
       return {

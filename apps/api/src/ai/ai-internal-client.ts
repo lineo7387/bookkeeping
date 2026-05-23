@@ -1,7 +1,7 @@
 import { Inject, Injectable, ServiceUnavailableException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { fail } from '../common/api-response';
-import type { InternalAiTextResult, TextParseContext } from './ai.types';
+import type { InternalAiOcrResult, InternalAiTextResult, ParseReceiptOcrRequest, TextParseContext } from './ai.types';
 
 export const AI_FETCH_IMPL = Symbol('AI_FETCH_IMPL');
 
@@ -69,6 +69,73 @@ export class AiInternalClient {
 
     return body;
   }
+
+  async parseReceiptOcr(request: ParseReceiptOcrRequest): Promise<InternalAiOcrResult> {
+    const baseUrl = this.configService.get<string>('AI_SERVICE_BASE_URL') ?? 'http://127.0.0.1:8000';
+    const timeoutMs = getTimeoutMs(this.configService.get<string>('AI_OCR_TIMEOUT_MS')) || 30000;
+    const abortController = new AbortController();
+    const timeout = setTimeout(() => abortController.abort(), timeoutMs);
+
+    let response: Response;
+    try {
+      response = await this.fetchImpl(`${baseUrl.replace(/\/+$/, '')}/internal/ai/receipt-ocr`, {
+        method: 'POST',
+        headers: {
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+        },
+        signal: abortController.signal,
+        body: JSON.stringify({
+          taskId: request.taskId,
+          ledgerId: request.ledgerId,
+          userId: request.userId,
+          file: {
+            storageKey: request.storageKey,
+            signedUrl: request.signedUrl,
+            mimeType: request.mimeType,
+          },
+          locale: request.locale,
+          timezone: request.timezone,
+          defaultCurrency: request.defaultCurrency,
+          context: {
+            categoryNames: request.context.categoryNames,
+            accountHints: request.context.accountHints,
+          },
+        }),
+      });
+    } catch {
+      throw new ServiceUnavailableException(fail('AI_TASK_FAILED', 'AI OCR service request failed'));
+    } finally {
+      clearTimeout(timeout);
+    }
+
+    if (!response.ok) {
+      throw new ServiceUnavailableException(fail('AI_TASK_FAILED', 'AI OCR service request failed'));
+    }
+
+    const body = (await response.json()) as unknown;
+    if (!isInternalAiOcrResult(body)) {
+      throw new ServiceUnavailableException(fail('AI_TASK_FAILED', 'AI OCR service response is invalid'));
+    }
+
+    return body;
+  }
+}
+
+function isInternalAiOcrResult(value: unknown): value is InternalAiOcrResult {
+  if (!value || typeof value !== 'object') return false;
+  if (!('status' in value) || (value.status !== 'succeeded' && value.status !== 'failed')) return false;
+  if (!('candidate' in value)) return false;
+  if (value.status === 'failed') return true;
+  const candidate = (value as Record<string, unknown>).candidate;
+  if (!candidate || typeof candidate !== 'object') return false;
+  const c = candidate as Record<string, unknown>;
+  return (
+    (c.type === 'income' || c.type === 'expense') &&
+    typeof c.amount === 'string' &&
+    typeof c.currency === 'string' &&
+    typeof c.confidence === 'number'
+  );
 }
 
 function isInternalAiTextResult(value: unknown): value is InternalAiTextResult {

@@ -82,7 +82,7 @@ M3 first-version decision:
 - Existing: `apps/api/src/statistics/*.spec.ts`
 - Existing: `docs/modules/statistics/基础统计说明.md`
 - Existing: `packages/shared-types/src/index.ts`
-- Existing: `.codex/project-context.md`
+- Existing: `.agents/project-context.md`
 - Existing: `docs/handover/开发交接说明.md`
 
 - [ ] **Step 1: Verify current statistics tests**
@@ -115,7 +115,7 @@ Expected: all commands exit 0.
 Run:
 
 ```bash
-git add .codex/project-context.md apps/api/AGENTS.md apps/api/src/app.module.ts apps/api/src/statistics docs/modules/statistics docs/modules/api docs/modules/shared-packages docs/handover packages/shared-types/src/index.ts
+git add .agents/project-context.md apps/api/AGENTS.md apps/api/src/app.module.ts apps/api/src/statistics docs/modules/statistics docs/modules/api docs/modules/shared-packages docs/handover packages/shared-types/src/index.ts
 git commit -m "feat: add m3 foundation statistics api"
 ```
 
@@ -783,7 +783,7 @@ Expected: commands exit 0.
 ## Task 8: Final M3 Documentation And Handoff
 
 **Files:**
-- Modify `.codex/project-context.md`
+- Modify `.agents/project-context.md`
 - Modify `AGENTS.md`
 - Modify `apps/api/AGENTS.md`
 - Modify `apps/admin-web/AGENTS.md` if admin-web rules need updated status

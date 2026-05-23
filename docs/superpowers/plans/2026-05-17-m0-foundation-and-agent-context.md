@@ -14,33 +14,33 @@
 
 Files created or maintained by this plan:
 
-- Create: `AGENTS.md`  
+- Create: `AGENTS.md`
   Root AI/Agent entrypoint that explains project context, required reading, and collaboration rules.
-- Create: `.codex/README.md`  
+- Create: `.agents/README.md`
   Index for Codex-specific context files.
-- Create: `.codex/project-context.md`  
+- Create: `.agents/project-context.md`
   Compact project overview for AI collaborators.
-- Create: `.codex/development-rules.md`  
+- Create: `.agents/development-rules.md`
   Development, documentation, frontend, backend, and commit rules.
-- Create: `.codex/scaffolding-protocol.md`  
+- Create: `.agents/scaffolding-protocol.md`
   User-executes-scaffold, Codex-configures-afterward protocol.
-- Create: `.codex/ai-service-guidelines.md`  
+- Create: `.agents/ai-service-guidelines.md`
   AI service boundaries, candidate result rules, and privacy requirements.
-- Create: `.codex/prompts/README.md`  
+- Create: `.agents/prompts/README.md`
   Future prompt template index.
-- Create: `docs/product/需求说明.md`  
+- Create: `docs/product/需求说明.md`
   Product requirement summary in Chinese.
-- Create: `docs/product/迭代路线.md`  
+- Create: `docs/product/迭代路线.md`
   Milestone roadmap in Chinese.
-- Create: `docs/architecture/总体架构.md`  
+- Create: `docs/architecture/总体架构.md`
   System architecture summary in Chinese.
-- Create: `docs/architecture/AI服务设计.md`  
+- Create: `docs/architecture/AI服务设计.md`
   AI service design summary in Chinese.
-- Create: `docs/api/接口规范.md`  
+- Create: `docs/api/接口规范.md`
   API conventions in Chinese.
-- Create: `docs/handover/开发交接说明.md`  
+- Create: `docs/handover/开发交接说明.md`
   Handover guide for future developers and agents.
-- Modify: `docs/superpowers/specs/2026-05-17-bookkeeping-platform-design.md`  
+- Modify: `docs/superpowers/specs/2026-05-17-bookkeeping-platform-design.md`
   Keep as the authoritative design spec.
 
 ## Task 1: Verify Existing Design Inputs
@@ -88,12 +88,12 @@ Expected: commit succeeds if files changed. If Git says there is nothing to comm
 **Files:**
 
 - Create: `AGENTS.md`
-- Create: `.codex/README.md`
-- Create: `.codex/project-context.md`
-- Create: `.codex/development-rules.md`
-- Create: `.codex/scaffolding-protocol.md`
-- Create: `.codex/ai-service-guidelines.md`
-- Create: `.codex/prompts/README.md`
+- Create: `.agents/README.md`
+- Create: `.agents/project-context.md`
+- Create: `.agents/development-rules.md`
+- Create: `.agents/scaffolding-protocol.md`
+- Create: `.agents/ai-service-guidelines.md`
+- Create: `.agents/prompts/README.md`
 
 - [ ] **Step 1: Create the Agent entrypoint**
 
@@ -110,8 +110,8 @@ Create `AGENTS.md` with:
 
 - `designer.md`：前端视觉设计系统。
 - `docs/superpowers/specs/2026-05-17-bookkeeping-platform-design.md`：产品、架构、数据库、权限、接口和迭代设计。
-- `.codex/project-context.md`：AI/Agent 快速上下文。
-- `.codex/development-rules.md`：开发和文档规则。
+- `.agents/project-context.md`：AI/Agent 快速上下文。
+- `.agents/development-rules.md`：开发和文档规则。
 
 ## 技术方向
 
@@ -142,7 +142,7 @@ Create `AGENTS.md` with:
 
 1. `docs/superpowers/specs/2026-05-17-bookkeeping-platform-design.md`
 2. `designer.md`
-3. `.codex/development-rules.md`
+3. `.agents/development-rules.md`
 4. 对应功能的中文模块文档
 
 如果对应功能文档不存在，应先创建文档，再实现代码。
@@ -150,7 +150,7 @@ Create `AGENTS.md` with:
 
 - [ ] **Step 2: Create Codex context files**
 
-Create the `.codex` files listed in the file structure. Each file must be written in Simplified Chinese and must include the exact project rules from `AGENTS.md`.
+Create the `.agents` files listed in the file structure. Each file must be written in Simplified Chinese and must include the exact project rules from `AGENTS.md`.
 
 - [ ] **Step 3: Verify files exist**
 
@@ -158,12 +158,12 @@ Run:
 
 ```bash
 test -f AGENTS.md
-test -f .codex/README.md
-test -f .codex/project-context.md
-test -f .codex/development-rules.md
-test -f .codex/scaffolding-protocol.md
-test -f .codex/ai-service-guidelines.md
-test -f .codex/prompts/README.md
+test -f .agents/README.md
+test -f .agents/project-context.md
+test -f .agents/development-rules.md
+test -f .agents/scaffolding-protocol.md
+test -f .agents/ai-service-guidelines.md
+test -f .agents/prompts/README.md
 ```
 
 Expected: all commands exit with code 0.
@@ -173,7 +173,7 @@ Expected: all commands exit with code 0.
 Run:
 
 ```bash
-git add AGENTS.md .codex
+git add AGENTS.md .agents
 git commit -m "docs: add agent collaboration context"
 ```
 
@@ -339,15 +339,15 @@ Create `docs/handover/开发交接说明.md` with:
 1. `AGENTS.md`
 2. `designer.md`
 3. `docs/superpowers/specs/2026-05-17-bookkeeping-platform-design.md`
-4. `.codex/project-context.md`
-5. `.codex/development-rules.md`
+4. `.agents/project-context.md`
+5. `.agents/development-rules.md`
 
 ## 开发前要求
 
 - 先查看对应功能中文文档。
 - 没有功能文档时，先补文档再写代码。
 - 涉及前端页面时，先查看 `designer.md`。
-- 涉及 AI 能力时，先查看 `.codex/ai-service-guidelines.md`。
+- 涉及 AI 能力时，先查看 `.agents/ai-service-guidelines.md`。
 ```
 
 - [ ] **Step 5: Verify documentation files**
@@ -381,7 +381,7 @@ Expected: commit succeeds.
 **Files:**
 
 - Create or Modify: `docs/handover/开发交接说明.md`
-- Read: `.codex/scaffolding-protocol.md`
+- Read: `.agents/scaffolding-protocol.md`
 
 - [ ] **Step 1: Confirm scaffold order**
 
@@ -430,7 +430,7 @@ Expected user result: `apps/admin-web` exists and contains a Vue 3 TypeScript pr
 Run:
 
 ```bash
-git add .codex/scaffolding-protocol.md docs/handover/开发交接说明.md
+git add .agents/scaffolding-protocol.md docs/handover/开发交接说明.md
 git commit -m "docs: define scaffold handoff protocol"
 ```
 
@@ -441,7 +441,7 @@ Expected: commit succeeds if files changed. If Git says there is nothing to comm
 **Files:**
 
 - Read: `AGENTS.md`
-- Read: `.codex/*.md`
+- Read: `.agents/*.md`
 - Read: `docs/**/*.md`
 
 - [ ] **Step 1: Scan for placeholders**
@@ -450,7 +450,7 @@ Run:
 
 ```bash
 placeholder_pattern='TBD|TO''DO|待定|占位|implement'' later|fill'' in'
-rg -n "$placeholder_pattern" AGENTS.md .codex docs --glob '!docs/superpowers/plans/**'
+rg -n "$placeholder_pattern" AGENTS.md .agents docs --glob '!docs/superpowers/plans/**'
 ```
 
 Expected: no output.

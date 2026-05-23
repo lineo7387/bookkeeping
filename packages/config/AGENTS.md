@@ -9,7 +9,7 @@
 修改本目录前，应先阅读：
 
 1. 根目录 `AGENTS.md`
-2. `.codex/development-rules.md`
+2. `.agents/development-rules.md`
 3. 受影响应用或包的 `AGENTS.md`
 4. 受影响 package 的 `package.json` 和 tsconfig 配置
 

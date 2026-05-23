@@ -1284,7 +1284,7 @@ Expected: `git diff --check` exits 0; status only contains intentional M1 change
 Check:
 
 ```bash
-rg -n "FastAPI|ledger_members|Policy|用户确认|ledger" AGENTS.md .codex docs/modules docs/superpowers/specs/2026-05-17-bookkeeping-platform-design.md
+rg -n "FastAPI|ledger_members|Policy|用户确认|ledger" AGENTS.md .agents docs/modules docs/superpowers/specs/2026-05-17-bookkeeping-platform-design.md
 ```
 
 Expected:

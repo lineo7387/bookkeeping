@@ -1,16 +1,24 @@
-# Codex 项目上下文
+# Codex 适配入口
 
-这个目录用于存放给 Codex、Agent 和后续 AI 协作者使用的项目上下文、规则和提示词。
+本目录只保留给 Codex 的兼容入口。项目共享规则的唯一维护源在 `.agents/`。
 
-## 文件说明
+## 读取顺序
 
-- `project-context.md`：项目目标、架构和关键业务边界。
-- `development-rules.md`：开发、文档、测试、提交和脚手架协作规则。
-- `scaffolding-protocol.md`：项目创建阶段的命令提示和职责边界。
-- `ai-service-guidelines.md`：FastAPI AI 服务、模型调用和候选结果规范。
-- `checklists/`：新对话启动和收尾交接的短清单，用于减少重复粘贴长提示词。
-- `prompts/`：后续可复用的提示词模板。
+1. `AGENTS.md`
+2. `.agents/README.md`
+3. `.agents/project-context.md`
+4. `.agents/development-rules.md`
+5. `.agents/skills.md`
+6. `.agents/skills/README.md`
+7. 当前工作目录最近的 `AGENTS.md`
+8. 本次功能对应的中文模块文档
 
-## 使用原则
+## 文件映射
 
-Agent 进入项目后，应先阅读根目录 `AGENTS.md`，再按任务阅读本目录中的具体文件。
+- `.codex/project-context.md` -> `.agents/project-context.md`
+- `.codex/development-rules.md` -> `.agents/development-rules.md`
+- `.codex/scaffolding-protocol.md` -> `.agents/scaffolding-protocol.md`
+- `.codex/ai-service-guidelines.md` -> `.agents/ai-service-guidelines.md`
+- `.codex/checklists/startup.md` -> `.agents/checklists/startup.md`
+- `.codex/checklists/handoff.md` -> `.agents/checklists/handoff.md`
+- `.codex/prompts/README.md` -> `.agents/prompts/README.md`

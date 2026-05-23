@@ -584,7 +584,7 @@ git commit -m "feat: add ledger transaction api"
 - Modify: `docs/modules/categories/分类说明.md`
 - Modify: `docs/modules/transactions/流水说明.md`
 - Modify: `docs/modules/api/NestJS服务说明.md`
-- Modify: `.codex/project-context.md`
+- Modify: `.agents/project-context.md`
 - Modify: `docs/handover/开发交接说明.md`
 
 - [ ] **Step 1: Update module docs from planning to implemented state**
@@ -598,7 +598,7 @@ Add M1.5 status and next recommended directions.
 - [ ] **Step 3: Commit**
 
 ```bash
-git add docs/modules/accounts/账户说明.md docs/modules/categories/分类说明.md docs/modules/transactions/流水说明.md docs/modules/api/NestJS服务说明.md .codex/project-context.md docs/handover/开发交接说明.md
+git add docs/modules/accounts/账户说明.md docs/modules/categories/分类说明.md docs/modules/transactions/流水说明.md docs/modules/api/NestJS服务说明.md .agents/project-context.md docs/handover/开发交接说明.md
 git commit -m "docs: document m15 bookkeeping modules"
 ```
 

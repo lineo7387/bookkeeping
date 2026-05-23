@@ -310,3 +310,18 @@ export interface ConfirmAiExtractionResult {
   extraction: AiExtractionSummary;
   transaction: TransactionSummary;
 }
+
+export interface ReceiptOcrAcceptedResult {
+  taskId: string;
+  ledgerId: string;
+  status: 'pending';
+  type: 'receipt_ocr';
+}
+
+export interface TransactionAttachmentSummary {
+  id: string;
+  transactionId: string;
+  fileUrl: string;
+  fileType: string;
+  createdAt: string;
+}

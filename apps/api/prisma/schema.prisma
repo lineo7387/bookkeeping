@@ -261,9 +261,10 @@ model Transaction {
   updatedAt  DateTime           @updatedAt @map("updated_at")
   deletedAt  DateTime?          @map("deleted_at")
   ledger     Ledger             @relation(fields: [ledgerId], references: [id], onDelete: Cascade)
-  account    Account            @relation(fields: [accountId], references: [id])
-  category   Category?          @relation(fields: [categoryId], references: [id], onDelete: SetNull)
-  creator    User               @relation("TransactionCreator", fields: [createdBy], references: [id])
+  account     Account                  @relation(fields: [accountId], references: [id])
+  category    Category?                @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  creator     User                     @relation("TransactionCreator", fields: [createdBy], references: [id])
+  attachments TransactionAttachment[]
 
   @@index([ledgerId, occurredAt])
   @@index([ledgerId, categoryId])
@@ -271,6 +272,20 @@ model Transaction {
   @@index([createdBy])
   @@index([ledgerId, deletedAt])
   @@map("transactions")
+}
+
+model TransactionAttachment {
+  id            String      @id @default(uuid())
+  transactionId String      @map("transaction_id")
+  fileUrl       String      @map("file_url")
+  fileType      String      @map("file_type")
+  storageKey    String      @map("storage_key")
+  createdAt     DateTime    @default(now()) @map("created_at")
+
+  transaction Transaction @relation(fields: [transactionId], references: [id])
+
+  @@index([transactionId])
+  @@map("transaction_attachments")
 }
 
 model AiTask {

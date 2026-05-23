@@ -82,6 +82,54 @@ export interface ConfirmAiExtractionResult {
   transaction: TransactionSummary;
 }
 
+export interface InternalAiOcrCandidate {
+  type: 'income' | 'expense';
+  amount: string;
+  currency: string;
+  occurredAt: string;
+  categoryName: string | null;
+  accountHint: string | null;
+  merchant: string | null;
+  note: string | null;
+  confidence: number;
+  missingFields?: AiCandidateMissingField[];
+  reviewMessage?: string | null;
+  receipt?: {
+    invoiceNo: string | null;
+    taxNo: string | null;
+    items: Array<{
+      name: string;
+      quantity: string | null;
+      unitPrice: string | null;
+      amount: string;
+    }>;
+  } | null;
+}
+
+export interface InternalAiOcrResult {
+  status: 'succeeded' | 'failed';
+  candidate: InternalAiOcrCandidate | null;
+  rawResult: Record<string, unknown> | null;
+  error?: {
+    code: string;
+    message: string;
+    retryable: boolean;
+  } | null;
+}
+
+export interface ParseReceiptOcrRequest {
+  taskId: string;
+  ledgerId: string;
+  userId: string;
+  signedUrl: string;
+  storageKey: string;
+  mimeType: string;
+  locale: string;
+  timezone: string;
+  defaultCurrency: string;
+  context: TextParseContext;
+}
+
 export type AiTaskList = PaginatedItems<AiTaskDetail>;
 
 export type { AiCandidateMissingField, AiCandidateTransaction, AiExtractionStatus, AiExtractionSummary, AiTaskStatus };

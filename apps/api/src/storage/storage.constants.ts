@@ -1,0 +1,3 @@
+export const STORAGE_S3_CLIENT = Symbol('STORAGE_S3_CLIENT');
+
+export const DEFAULT_SIGNED_URL_EXPIRES_SECONDS = 3600;

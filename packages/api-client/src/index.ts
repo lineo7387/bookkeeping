@@ -14,6 +14,7 @@ import type {
   PaginatedItems,
   ConfirmAiExtractionResult,
   AuthResult,
+  ReceiptOcrAcceptedResult,
 } from '@bookkeeping/shared-types';
 
 export interface BookkeepingApiClientOptions {
@@ -93,6 +94,18 @@ export class BookkeepingApiClient {
       method: 'POST',
       body,
     });
+  }
+
+  async receiptOcr(
+    ledgerId: string,
+    file: Blob | File,
+  ): Promise<ApiResponse<ReceiptOcrAcceptedResult>> {
+    const formData = new FormData();
+    formData.append('file', file);
+    return this.requestMultipart<ReceiptOcrAcceptedResult>(
+      `/ledgers/${encodeURIComponent(ledgerId)}/ai/receipt-ocr`,
+      formData,
+    );
   }
 
   getAiTask(taskId: string): Promise<ApiResponse<AiTaskDetail>> {
@@ -250,6 +263,45 @@ export class BookkeepingApiClient {
       },
     };
   }
+
+  private async requestMultipart<T>(
+    path: string,
+    formData: FormData,
+  ): Promise<ApiResponse<T>> {
+    const headers = new Headers(this.defaultHeaders);
+    headers.set('Accept', 'application/json');
+    // Do NOT set Content-Type — let the runtime set multipart boundary automatically
+
+    const accessToken = await this.getAccessToken?.();
+    if (accessToken) {
+      headers.set('Authorization', `Bearer ${accessToken}`);
+    }
+
+    let response: Response;
+    try {
+      response = await this.fetchImpl(`${this.baseUrl}${path}`, {
+        method: 'POST',
+        headers,
+        body: formData,
+      });
+    } catch (error) {
+      return {
+        success: false,
+        error: {
+          code: 'UNKNOWN_ERROR',
+          message: 'Network request failed',
+          details: toErrorDetails(error),
+        },
+      };
+    }
+
+    const parsed = await parseJsonResponse<T>(response);
+    if (parsed.kind === 'response') return parsed.response;
+    if (parsed.kind === 'invalid') {
+      return { success: false, error: { code: 'UNKNOWN_ERROR', message: parsed.message, details: parsed.details } };
+    }
+    return { success: false, error: { code: 'UNKNOWN_ERROR', message: 'Empty API response body', details: { status: response.status } } };
+  }
 }
 
 export function createApiClient(options: BookkeepingApiClientOptions): BookkeepingApiClient {
@@ -381,4 +433,5 @@ export type {
   ApiError,
   ApiResponse,
   ConfirmAiExtractionResult,
+  ReceiptOcrAcceptedResult,
 };

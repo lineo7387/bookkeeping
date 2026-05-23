@@ -7,6 +7,9 @@ Agent 协作上下文用于让 AI 在 monorepo 中快速识别项目边界、技
 本项目采用根目录总则加子项目局部规则的方式维护 `AGENTS.md`：
 
 - 根目录 `AGENTS.md`：项目定位、全局硬规则、修改前检查、局部上下文索引和当前工程状态。
+- `.agents/`：跨工具共享规则源，保存项目上下文、开发规则、skills 映射、清单和提示词模板。
+- `.agents/skills/`：当前项目推荐 Agent skills 的仓库级副本，避免依赖个人全局安装。
+- `.codex/`、`CLAUDE.md`、`GEMINI.md`、`.cursor/rules/`：工具适配入口，只引用 `.agents/`，不维护独立规则。
 - `apps/*/AGENTS.md`：具体应用的技术栈最佳实践、推荐 Agent skills、目录架构、验证命令和禁止事项。
 - `packages/*/AGENTS.md`：共享包的职责边界、技术栈最佳实践、推荐 Agent skills、目录架构和调用约束。
 
@@ -17,7 +20,7 @@ Agent 协作上下文用于让 AI 在 monorepo 中快速识别项目边界、技
 - 子项目规则应包含：模块定位、修改前检查、推荐 Agent skills、技术栈最佳实践、推荐目录架构、验证命令和禁止事项。
 - 新增业务功能前仍需先检查对应中文模块文档；缺少模块文档时，应先补文档再实现。
 - 未创建代码脚手架的规划目录可以先维护 `AGENTS.md`，但不得提前创建业务代码、package.json 或框架配置。
-- 完成任一里程碑、功能闭环、接口契约变化、验证命令变化或下一轮建议变化后，必须同步检查根 `AGENTS.md`、最近子项目 `AGENTS.md`、`.codex/project-context.md`、`docs/handover/开发交接说明.md` 和相关模块文档。
+- 完成任一里程碑、功能闭环、接口契约变化、验证命令变化、skills 映射变化或下一轮建议变化后，必须同步检查根 `AGENTS.md`、最近子项目 `AGENTS.md`、`.agents/project-context.md`、`.agents/skills.md`、`docs/handover/开发交接说明.md` 和相关模块文档。
 - 如果检查后确认无需更新上下文，应在最终交付说明中明确“已检查上下文，无需同步”。
 
 ## 当前上下文文件
@@ -35,6 +38,16 @@ Agent 协作上下文用于让 AI 在 monorepo 中快速识别项目边界、技
 - `packages/api-client/AGENTS.md`：NestJS API 请求客户端。
 - `packages/validation/AGENTS.md`：规划中的共享校验包。
 - `packages/config/AGENTS.md`：规划中的共享工程配置包。
+
+已维护的跨工具适配入口：
+
+- `.agents/README.md`：共享规则源索引。
+- `.agents/skills.md`：skills 使用说明和跨工具降级规则。
+- `.agents/skills/`：仓库级 skills 实际内容。
+- `.codex/README.md`：Codex 兼容入口。
+- `CLAUDE.md`：Claude 兼容入口。
+- `GEMINI.md`：Gemini 兼容入口。
+- `.cursor/rules/bookkeeping-agent-rules.md`：Cursor 兼容入口。
 
 ## 业务规则
 

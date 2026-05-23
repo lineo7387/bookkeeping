@@ -9,7 +9,7 @@
 修改本目录前，应先阅读：
 
 1. 根目录 `AGENTS.md`
-2. `.codex/development-rules.md`
+2. `.agents/development-rules.md`
 3. `docs/modules/shared-packages/共享包说明.md`
 4. 涉及业务模块时，阅读对应中文模块文档、后端 DTO 和 API 文档
 

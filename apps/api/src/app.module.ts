@@ -11,6 +11,8 @@ import { PrismaModule } from './prisma/prisma.module';
 import { StatisticsModule } from './statistics/statistics.module';
 import { TransactionsModule } from './transactions/transactions.module';
 import { UsersModule } from './users/users.module';
+import { QueueModule } from './queue/queue.module';
+import { StorageModule } from './storage/storage.module';
 
 @Module({
   imports: [
@@ -18,6 +20,8 @@ import { UsersModule } from './users/users.module';
       envFilePath: ['.env.local', '.env'],
       isGlobal: true,
     }),
+    QueueModule,
+    StorageModule,
     AdminModule,
     AiModule,
     AuthModule,

@@ -189,6 +189,53 @@ export class AiRepository {
     };
   }
 
+  async createReceiptOcrTask(data: {
+    ledgerId: string;
+    userId: string;
+    inputFileUrl: string;
+  }): Promise<AiTaskDetail> {
+    const task = await this.prisma.aiTask.create({
+      data: {
+        ledgerId: data.ledgerId,
+        userId: data.userId,
+        type: 'receipt_ocr',
+        status: 'pending',
+        inputFileUrl: data.inputFileUrl,
+      },
+      include: { extractions: true },
+    });
+    return toAiTaskDetail(task as AiTaskRecord);
+  }
+
+  async markTaskProcessing(taskId: string): Promise<void> {
+    await this.prisma.aiTask.update({
+      where: { id: taskId },
+      data: { status: 'processing' },
+    });
+  }
+
+  async findTaskById(taskId: string): Promise<AiTaskDetail | null> {
+    const task = await this.prisma.aiTask.findUnique({
+      where: { id: taskId },
+      include: { extractions: { orderBy: { createdAt: 'desc' }, take: 1 } },
+    });
+    return task ? toAiTaskDetail(task as AiTaskRecord) : null;
+  }
+
+  async createTransactionAttachment(
+    tx: { transactionAttachment: { create(args: any): Promise<any> } },
+    data: { transactionId: string; fileUrl: string; fileType: string; storageKey: string },
+  ): Promise<void> {
+    await tx.transactionAttachment.create({ data });
+  }
+
+  async findRawTask(taskId: string): Promise<{ inputFileUrl: string | null; type: string } | null> {
+    return this.prisma.aiTask.findUnique({
+      where: { id: taskId },
+      select: { inputFileUrl: true, type: true },
+    });
+  }
+
   runInTransaction<T>(callback: (tx: Prisma.TransactionClient) => Promise<T>): Promise<T> {
     return this.prisma.$transaction(callback);
   }

@@ -11,7 +11,7 @@
 修改本目录前，应先阅读：
 
 1. 根目录 `AGENTS.md`
-2. `.codex/development-rules.md`
+2. `.agents/development-rules.md`
 3. `docs/modules/ai-service/AI服务规范.md`
 4. `docs/architecture/AI服务设计.md`
 5. 涉及候选结果或正式流水时，阅读流水、分类、账户相关模块文档

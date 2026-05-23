@@ -5,6 +5,8 @@ import { TransactionsService } from '../transactions/transactions.service';
 import { AiInternalClient } from './ai-internal-client';
 import { AiRepository } from './ai.repository';
 import { AiService } from './ai.service';
+import { StorageService } from '../storage/storage.service';
+import { Queue } from 'bullmq';
 import type { AiCandidateTransaction, AiExtractionSummary, AiTaskDetail } from './ai.types';
 
 describe('AiService', () => {
@@ -21,11 +23,16 @@ describe('AiService', () => {
       | 'confirmExtractionInTransaction'
       | 'rejectExtraction'
       | 'getTextParseContext'
+      | 'findTaskById'
+      | 'findRawTask'
+      | 'createTransactionAttachment'
     >
   > & { runInTransaction: jest.Mock };
   let policy: jest.Mocked<Pick<LedgerPolicyService, 'canCreateTransaction' | 'canViewLedger'>>;
   let internalClient: jest.Mocked<Pick<AiInternalClient, 'parseTextTransaction'>>;
   let transactionsService: jest.Mocked<Pick<TransactionsService, 'createFromAiExtraction'>>;
+  let storageService: jest.Mocked<Pick<StorageService, 'upload' | 'getSignedUrl' | 'delete'>>;
+  let ocrQueue: jest.Mocked<Pick<Queue, 'add'>>;
   let service: AiService;
 
   const candidate: AiCandidateTransaction & { type: 'expense' } = {
@@ -95,6 +102,9 @@ describe('AiService', () => {
       confirmExtractionInTransaction: jest.fn(),
       rejectExtraction: jest.fn(),
       getTextParseContext: jest.fn(),
+      findTaskById: jest.fn(),
+      findRawTask: jest.fn(),
+      createTransactionAttachment: jest.fn(),
       runInTransaction: jest.fn(async (callback) => callback({} as never)),
     };
     policy = {
@@ -107,11 +117,21 @@ describe('AiService', () => {
     transactionsService = {
       createFromAiExtraction: jest.fn(),
     };
+    storageService = {
+      upload: jest.fn(),
+      getSignedUrl: jest.fn(),
+      delete: jest.fn(),
+    } as any;
+    ocrQueue = {
+      add: jest.fn(),
+    } as any;
     service = new AiService(
       repository as unknown as AiRepository,
       policy as unknown as LedgerPolicyService,
       internalClient as unknown as AiInternalClient,
       transactionsService as unknown as TransactionsService,
+      storageService as unknown as StorageService,
+      ocrQueue as unknown as Queue,
     );
   });
 

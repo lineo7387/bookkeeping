@@ -10,7 +10,7 @@
 
 1. 根目录 `AGENTS.md`
 2. `designer.md`
-3. `.codex/development-rules.md`
+3. `.agents/development-rules.md`
 4. `docs/modules/admin-web/后台Web说明.md`
 5. 涉及真实接口时，阅读 `docs/api/接口规范.md` 和对应业务模块文档
 

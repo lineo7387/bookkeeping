@@ -1045,7 +1045,7 @@ git commit -m "feat: apply transaction balance updates atomically"
 
 **Files:**
 - Modify if needed: `docs/handover/开发交接说明.md`
-- Modify if needed: `.codex/project-context.md`
+- Modify if needed: `.agents/project-context.md`
 
 - [ ] **Step 1: Update handoff status**
 
@@ -1057,7 +1057,7 @@ In `docs/handover/开发交接说明.md`, update the current engineering state a
 
 - [ ] **Step 2: Update quick project context**
 
-In `.codex/project-context.md`, update the API state bullet:
+In `.agents/project-context.md`, update the API state bullet:
 
 ```txt
 - `apps/api` 已创建，当前包含 NestJS 11、Prisma 7、`@nestjs/config`、PrismaService、认证与会话、JWT Guard、用户模块、账本模块、成员角色管理、Ledger Policy 层、账户、分类、流水 API，以及 M2 账户余额流水联动。
@@ -1104,7 +1104,7 @@ Expected: all PASS and `git diff --check` produces no output.
 Check the implementation against `docs/superpowers/specs/2026-05-19-m2-account-balance-linking-design.md`:
 
 ```bash
-rg -n "current_balance|createWithBalanceChanges|updateWithBalanceChanges|softDeleteWithBalanceChanges|Transfer target account must be different" apps/api/src docs/modules .codex/project-context.md docs/handover/开发交接说明.md
+rg -n "current_balance|createWithBalanceChanges|updateWithBalanceChanges|softDeleteWithBalanceChanges|Transfer target account must be different" apps/api/src docs/modules .agents/project-context.md docs/handover/开发交接说明.md
 ```
 
 Expected: matches show docs and implementation for balance linking, transaction methods, and same-account transfer rejection.
@@ -1112,7 +1112,7 @@ Expected: matches show docs and implementation for balance linking, transaction 
 - [ ] **Step 7: Commit handoff and verification docs**
 
 ```bash
-git add docs/handover/开发交接说明.md .codex/project-context.md docs/modules/accounts/账户说明.md docs/modules/transactions/流水说明.md
+git add docs/handover/开发交接说明.md .agents/project-context.md docs/modules/accounts/账户说明.md docs/modules/transactions/流水说明.md
 git commit -m "docs: update m2 balance handoff"
 ```
 

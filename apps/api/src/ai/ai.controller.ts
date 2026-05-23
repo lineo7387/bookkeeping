@@ -1,4 +1,6 @@
-import { Body, Controller, Get, Param, Post, Query, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, HttpStatus, Param, Post, Query, UploadedFile, UseGuards, UseInterceptors } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { imageFileFilter } from './dto/receipt-ocr-file.filter';
 import { ok } from '../common/api-response';
 import { CurrentUser, type AuthenticatedUser } from '../common/current-user.decorator';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
@@ -20,6 +22,26 @@ export class AiController {
     @Body() dto: ParseAiTextDto,
   ) {
     return ok(await this.aiService.parseAiText(user.id, ledgerId, dto));
+  }
+
+  @Post('ledgers/:ledgerId/ai/receipt-ocr')
+  @HttpCode(HttpStatus.ACCEPTED)
+  @UseInterceptors(
+    FileInterceptor('file', {
+      limits: { fileSize: 10 * 1024 * 1024 },
+      fileFilter: imageFileFilter,
+    }),
+  )
+  async receiptOcr(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('ledgerId') ledgerId: string,
+    @UploadedFile() file: Express.Multer.File,
+  ) {
+    if (!file) {
+      const { fail: failFn } = await import('../common/api-response');
+      throw new (await import('@nestjs/common')).BadRequestException(failFn('VALIDATION_FAILED', '请上传票据图片'));
+    }
+    return ok(await this.aiService.submitReceiptOcr(user.id, ledgerId, file));
   }
 
   @Get('ledgers/:ledgerId/ai/tasks')
