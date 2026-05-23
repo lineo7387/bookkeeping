@@ -38,6 +38,13 @@ export async function fetchAdminDashboardData(
   }
 }
 
+export async function fetchAdminAiTasksData(
+  aiTaskFilters: AdminAiTaskFilters = defaultAdminAiTaskFilters,
+  client: BookkeepingApiClient = adminApiClient,
+): Promise<PaginatedItems<AdminAiTaskSummary>> {
+  return unwrapApiResponse(await client.listAdminAiTasks(createAdminAiTaskQuery(aiTaskFilters)), 'AI 任务列表')
+}
+
 function unwrapApiResponse<T>(response: ApiResponse<T>, label: string): T {
   if (response.success) {
     return response.data
