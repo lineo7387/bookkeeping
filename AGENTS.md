@@ -21,7 +21,7 @@
 - 产品说明、模块说明、交接说明使用简体中文。
 - 项目脚手架创建命令由用户执行；Agent 只给出命令提示，创建后再修改配置和文档。
 - 前端只能调用 NestJS 对外 API，不直接调用 FastAPI。
-- FastAPI 只生成 AI 候选结果，不承担认证、权限、主业务状态或正式流水创建。
+- FastAPI 当前只生成 AI 候选结果；后续 M6 如扩展为财务问答，也只能基于 NestJS 提供的受控工具结果生成答复，不承担认证、权限、主业务状态、正式流水创建或直接数据库访问。
 - AI 候选结果必须由用户确认后，才允许由 NestJS 创建正式流水。
 - 所有交易归属于 `ledger`，不要直接建模为只归属于 `user`。
 - 所有协作权限通过 `ledger_members` 和 Policy 层判断。
@@ -88,4 +88,4 @@ git status --short --branch
 git log --oneline -8
 ```
 
-当前分支 `codex/m4-ai-text-accounting` 已完成 M4 AI 文本记账 NestJS 闭环首版、FastAPI 确定性 MVP parser、低置信度候选补全提示、独立 Admin AI 任务列表页、后续加固提交 `baa7470 fix: harden m4 ai text follow-up`，并已补充 M4 本地运行、NestJS-to-FastAPI 联调、故障排查文档和 `pnpm e2e:m4:ai-text` 本地闭环脚本；本地启动验证已修复 Prisma 7 adapter 和 AI 内部 client provider wiring 问题。后台 Web 已补系统管理员登录页和 Pinia access token 会话入口；本地管理员可用 `pnpm --filter @bookkeeping/api admin:bootstrap -- --email <email> --password <password>` 创建或提权。继续开发时可先按 `.codex/checklists/startup.md` 启动，优先做本地开发体验优化或 M4 复盘收尾；不要跳到 M5 票据 OCR，不要做移动端页面，也不要让前端或 `api-client` 直接调用 FastAPI。开始新功能前应先补或读取对应中文模块文档。
+当前 `main` 已合并 M4 AI 文本记账 NestJS 闭环首版、FastAPI 确定性 MVP parser、低置信度候选补全提示、独立 Admin AI 任务列表页和本地 `pnpm e2e:m4:ai-text` 闭环脚本；本地启动验证已修复 Prisma 7 adapter 和 AI 内部 client provider wiring 问题。后台 Web 已补系统管理员登录页和 Pinia access token 会话入口；本地管理员可用 `pnpm --filter @bookkeeping/api admin:bootstrap -- --email <email> --password <password>` 创建或提权。继续开发时可先按 `.codex/checklists/startup.md` 启动；M5 是票据 OCR 与文件，M6 规划为 AI 财务问答与洞察。开始新功能前应先补或读取对应中文模块文档，不要做移动端页面，也不要让前端或 `api-client` 直接调用 FastAPI。
