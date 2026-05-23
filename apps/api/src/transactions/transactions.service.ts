@@ -2,6 +2,7 @@ import { BadRequestException, ForbiddenException, Injectable, NotFoundException 
 import type {
   AccountSummary,
   CategorySummary,
+  TransactionSource,
   TransactionSummary,
   TransactionType,
 } from '@bookkeeping/shared-types';
@@ -33,6 +34,7 @@ export interface CreateTransactionFromAiInput {
   visibility?: 'ledger' | 'private';
   transferTargetAccountId?: string;
   sourceExtractionId: string;
+  source?: Extract<TransactionSource, 'ai_text' | 'ocr'>;
 }
 
 @Injectable()
@@ -128,6 +130,9 @@ export class TransactionsService {
     tx?: TransactionClient,
   ): Promise<TransactionSummary> {
     await this.requireCreateTransaction(userId, input.ledgerId);
+    if (!isPositiveDecimalString(input.amount)) {
+      throw validationFailed('Amount must be a positive decimal string');
+    }
 
     const account = await this.getVisibleActiveAccount(userId, input.accountId);
     if (account.ledgerId !== input.ledgerId) {
@@ -167,7 +172,7 @@ export class TransactionsService {
       note: input.note,
       visibility: finalVisibility,
       createdBy: userId,
-      source: 'ai_text',
+      source: input.source ?? 'ai_text',
       metadata,
     };
     const balanceChanges = buildBalanceChanges({
@@ -476,6 +481,10 @@ function transactionNotFound(): NotFoundException {
 
 function validationFailed(message: string): BadRequestException {
   return new BadRequestException(fail('VALIDATION_FAILED', message));
+}
+
+function isPositiveDecimalString(value: string): boolean {
+  return /^(?=.*[1-9])\d{1,16}(\.\d{1,2})?$/.test(value);
 }
 
 function getExistingTransferTargetAccountId(metadata?: Record<string, unknown> | null): string | undefined {

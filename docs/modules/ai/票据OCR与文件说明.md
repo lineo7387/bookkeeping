@@ -86,6 +86,8 @@ model TransactionAttachment {
 ## 4. 存储规范 (MinIO)
 
 - **Bucket 名称**：`bookkeeping-receipts`
+  - 可通过 NestJS 环境变量 `STORAGE_RECEIPT_BUCKET` 覆盖；代码统一从 `StorageService.getReceiptBucketName()` 读取，不在业务流程中硬编码。
+  - NestJS 启动时 `StorageService.onModuleInit()` 会调用 `ensureBucket()` 检查并初始化该 Bucket。
 - **Key 命名结构**：`receipts/{ledgerId}/{YYYY}/{MM}/{uuid}.{ext}`
   - 按账本维度（`ledgerId`）对文件对象进行物理隔离。
   - 包含年/月以便于后期文件归档和清理。
@@ -112,7 +114,14 @@ model TransactionAttachment {
 }
 ```
 
-### 5.2 确认流水候选 (含附件生成)
+### 5.2 OCR 候选规则
+
+- FastAPI 只有在识别到正数金额时才返回 `status = succeeded` 的候选结果。
+- 如果票据文字可识别但金额不可识别，FastAPI 返回 `status = failed`，错误码为 `AI_OCR_AMOUNT_NOT_FOUND`，NestJS 会将对应 `ai_tasks.status` 标记为 `failed`。
+- 金额、时间、置信度、补全字段和票据明细会在 NestJS 内部 client 再做运行时结构校验，避免坏候选落库。
+- 用户确认 OCR 候选后，正式流水 `source = ocr`，并在同一确认事务中创建 `transaction_attachments` 记录。
+
+### 5.3 确认流水候选 (含附件生成)
 - **路径**：`POST /api/ai/extractions/:extractionId/confirm`
 - **响应**：创建 Transaction 并将原始上传图片存入 `transaction_attachments`。
 
@@ -143,6 +152,6 @@ cd apps/ai-service && uv run fastapi dev app/main.py
 
 ### 6.3 常见故障排查
 1. **MinIO 报 BucketNotFound 错误**
-   - 启动时 NestJS 会自动检查并调用 `StorageService.ensureBucket('bookkeeping-receipts')` 来初始化 Bucket。如未成功，可在 MinIO 控制台中手动创建 `bookkeeping-receipts`。
+   - 启动时 NestJS 会自动检查并调用 `StorageService.ensureBucket(STORAGE_RECEIPT_BUCKET)` 来初始化 Bucket。如未成功，可在 MinIO 控制台中手动创建当前环境变量对应的 Bucket，默认值为 `bookkeeping-receipts`。
 2. **FastAPI Tesseract 无法载入 chi_sim 语言包**
    - 检查本地是否安装了 `tesseract-lang`。可以在命令行终端中执行 `tesseract --list-langs` 确认输出中包含 `chi_sim`。

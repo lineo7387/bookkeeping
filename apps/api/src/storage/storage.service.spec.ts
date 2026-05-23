@@ -38,4 +38,14 @@ describe('StorageService', () => {
     await service.delete('test-bucket', 'receipts/test.jpg');
     expect(mockS3Send).toHaveBeenCalledTimes(1);
   });
+
+  it('initializes the configured receipt bucket on module startup', async () => {
+    await service.onModuleInit();
+
+    expect(mockS3Send).toHaveBeenCalledWith(
+      expect.objectContaining({
+        input: expect.objectContaining({ Bucket: 'test-bucket' }),
+      }),
+    );
+  });
 });

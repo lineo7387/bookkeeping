@@ -68,6 +68,25 @@ def test_receipt_ocr_returns_failed_when_no_text(client: TestClient):
     assert body["candidate"] is None
 
 
+def test_receipt_ocr_returns_failed_when_no_amount(client: TestClient):
+    mock_image = b"fake-image-bytes"
+
+    with (
+        patch("app.services.receipt_ocr_service.download_image", new_callable=AsyncMock, return_value=mock_image),
+        patch(
+            "app.services.receipt_ocr_service.get_ocr_provider",
+            return_value=_mock_provider(["示例餐厅", "欢迎光临"]),
+        ),
+    ):
+        response = client.post("/internal/ai/receipt-ocr", json=VALID_REQUEST)
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["status"] == "failed"
+    assert body["candidate"] is None
+    assert body["error"]["code"] == "AI_OCR_AMOUNT_NOT_FOUND"
+
+
 def _mock_provider(text_blocks: list[str]):
     provider = AsyncMock()
     provider.extract_text.return_value = text_blocks

@@ -105,6 +105,47 @@ describe('AiInternalClient', () => {
     await expect(client.parseTextTransaction(request)).rejects.toBeInstanceOf(ServiceUnavailableException);
   });
 
+  it('rejects malformed succeeded OCR candidates from the internal AI service', async () => {
+    const client = new AiInternalClient(
+      { get: jest.fn().mockReturnValue('http://127.0.0.1:8000') } as unknown as ConfigService,
+      async () =>
+        new Response(
+          JSON.stringify({
+            status: 'succeeded',
+            candidate: {
+              type: 'expense',
+              amount: '0.00',
+              currency: 'CNY',
+              occurredAt: 'not-a-date',
+              categoryName: null,
+              accountHint: null,
+              merchant: null,
+              note: null,
+              confidence: 2,
+              missingFields: ['password'],
+            },
+            rawResult: {},
+          }),
+          { status: 200, headers: { 'Content-Type': 'application/json' } },
+        ),
+    );
+
+    await expect(
+      client.parseReceiptOcr({
+        taskId: 'task_1',
+        ledgerId: 'ledger_1',
+        userId: 'user_1',
+        signedUrl: 'http://minio/signed-url',
+        storageKey: 'receipts/test.jpg',
+        mimeType: 'image/jpeg',
+        locale: 'zh-CN',
+        timezone: 'Asia/Shanghai',
+        defaultCurrency: 'CNY',
+        context: request.context,
+      }),
+    ).rejects.toBeInstanceOf(ServiceUnavailableException);
+  });
+
   it('aborts the internal AI service request when the configured timeout is reached', async () => {
     jest.useFakeTimers();
     const fetchImpl = jest.fn(

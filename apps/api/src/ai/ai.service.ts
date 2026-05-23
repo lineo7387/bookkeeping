@@ -49,7 +49,7 @@ export class AiService {
     const now = new Date();
     const ext = mimeToExtension(file.mimetype);
     const storageKey = `receipts/${ledgerId}/${now.getUTCFullYear()}/${String(now.getUTCMonth() + 1).padStart(2, '0')}/${randomUUID()}.${ext}`;
-    const bucket = 'bookkeeping-receipts';
+    const bucket = this.storageService.getReceiptBucketName();
 
     await this.storageService.upload(bucket, storageKey, file.buffer, file.mimetype);
 
@@ -157,7 +157,8 @@ export class AiService {
       throw aiResourceNotFound();
     }
 
-    const transactionInput = buildTransactionInput(extraction, dto);
+    const task = await this.aiRepository.findRawTask(extraction.taskId);
+    const transactionInput = buildTransactionInput(extraction, dto, task?.type === 'receipt_ocr' ? 'ocr' : 'ai_text');
     return this.aiRepository.runInTransaction(async (tx) => {
       const transaction = await this.transactionsService.createFromAiExtraction(
         userId,
@@ -174,9 +175,9 @@ export class AiService {
       }
 
       // M5: Create attachment for OCR tasks
-      const task = await this.aiRepository.findTaskById(confirmed.taskId);
-      if (task && task.type === 'receipt_ocr' && task.extraction) {
-        const aiTask = await this.aiRepository.findRawTask(confirmed.taskId);
+      const confirmedTask = await this.aiRepository.findTaskById(confirmed.taskId);
+      if (confirmedTask && confirmedTask.type === 'receipt_ocr' && confirmedTask.extraction) {
+        const aiTask = task?.type === 'receipt_ocr' ? task : await this.aiRepository.findRawTask(confirmed.taskId);
         if (aiTask?.inputFileUrl) {
           const extension = aiTask.inputFileUrl.split('.').pop() ?? '';
           await this.aiRepository.createTransactionAttachment(tx as any, {
@@ -250,7 +251,11 @@ function toCandidate(ledgerId: string, candidate: InternalAiTextCandidate): AiCa
   };
 }
 
-function buildTransactionInput(extraction: AiExtractionSummary, dto: ConfirmAiExtractionDto) {
+function buildTransactionInput(
+  extraction: AiExtractionSummary,
+  dto: ConfirmAiExtractionDto,
+  source: 'ai_text' | 'ocr' = 'ai_text',
+) {
   const candidate = extraction.candidate;
   if (!dto.accountId) {
     throw validationFailed('Account is required to confirm AI extraction');
@@ -271,6 +276,7 @@ function buildTransactionInput(extraction: AiExtractionSummary, dto: ConfirmAiEx
     note: dto.note ?? candidate.note,
     visibility: dto.visibility ?? (candidate.visibility === 'private' ? 'private' : 'ledger'),
     sourceExtractionId: extraction.id,
+    source,
   };
 }
 

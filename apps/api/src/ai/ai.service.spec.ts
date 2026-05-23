@@ -23,6 +23,7 @@ describe('AiService', () => {
       | 'confirmExtractionInTransaction'
       | 'rejectExtraction'
       | 'getTextParseContext'
+      | 'createReceiptOcrTask'
       | 'findTaskById'
       | 'findRawTask'
       | 'createTransactionAttachment'
@@ -31,7 +32,7 @@ describe('AiService', () => {
   let policy: jest.Mocked<Pick<LedgerPolicyService, 'canCreateTransaction' | 'canViewLedger'>>;
   let internalClient: jest.Mocked<Pick<AiInternalClient, 'parseTextTransaction'>>;
   let transactionsService: jest.Mocked<Pick<TransactionsService, 'createFromAiExtraction'>>;
-  let storageService: jest.Mocked<Pick<StorageService, 'upload' | 'getSignedUrl' | 'delete'>>;
+  let storageService: jest.Mocked<Pick<StorageService, 'getReceiptBucketName' | 'upload' | 'getSignedUrl' | 'delete'>>;
   let ocrQueue: jest.Mocked<Pick<Queue, 'add'>>;
   let service: AiService;
 
@@ -102,6 +103,7 @@ describe('AiService', () => {
       confirmExtractionInTransaction: jest.fn(),
       rejectExtraction: jest.fn(),
       getTextParseContext: jest.fn(),
+      createReceiptOcrTask: jest.fn(),
       findTaskById: jest.fn(),
       findRawTask: jest.fn(),
       createTransactionAttachment: jest.fn(),
@@ -118,6 +120,7 @@ describe('AiService', () => {
       createFromAiExtraction: jest.fn(),
     };
     storageService = {
+      getReceiptBucketName: jest.fn().mockReturnValue('test-receipts'),
       upload: jest.fn(),
       getSignedUrl: jest.fn(),
       delete: jest.fn(),
@@ -175,6 +178,28 @@ describe('AiService', () => {
       }),
     );
     expect(transactionsService.createFromAiExtraction).not.toHaveBeenCalled();
+  });
+
+  it('uploads receipt OCR files to the configured receipt bucket', async () => {
+    policy.canCreateTransaction.mockResolvedValue(true);
+    repository.createReceiptOcrTask.mockResolvedValue({
+      ...task,
+      id: 'task_ocr',
+      type: 'receipt_ocr',
+      status: 'pending',
+    });
+
+    await service.submitReceiptOcr('user_1', 'ledger_1', {
+      buffer: Buffer.from('image-bytes'),
+      mimetype: 'image/png',
+    } as Express.Multer.File);
+
+    expect(storageService.upload).toHaveBeenCalledWith(
+      'test-receipts',
+      expect.stringMatching(/^receipts\/ledger_1\/\d{4}\/\d{2}\/.+\.png$/),
+      expect.any(Buffer),
+      'image/png',
+    );
   });
 
   it('preserves low-confidence review hints from the internal AI candidate', async () => {
@@ -280,6 +305,43 @@ describe('AiService', () => {
       }),
       expect.anything(),
     );
+  });
+
+  it('confirms OCR extraction by creating source ocr transaction and attachment', async () => {
+    repository.findPendingExtractionForUser.mockResolvedValue({
+      ...extraction,
+      taskId: 'task_ocr',
+      userId: 'user_1',
+      rawResult: { provider: 'tesseract' },
+    });
+    transactionsService.createFromAiExtraction.mockResolvedValue({ ...transaction, source: 'ocr' });
+    repository.confirmExtractionInTransaction.mockResolvedValue({ ...extraction, taskId: 'task_ocr', status: 'confirmed' });
+    repository.findTaskById.mockResolvedValue({
+      ...task,
+      id: 'task_ocr',
+      type: 'receipt_ocr',
+      status: 'succeeded',
+      extraction,
+    });
+    repository.findRawTask.mockResolvedValue({ type: 'receipt_ocr', inputFileUrl: 'receipts/ledger_1/2026/05/file.png' });
+
+    await service.confirmExtraction('user_1', 'extraction_1', {
+      ledgerId: 'ledger_1',
+      accountId: 'account_1',
+      categoryId: 'category_1',
+    });
+
+    expect(transactionsService.createFromAiExtraction).toHaveBeenCalledWith(
+      'user_1',
+      expect.objectContaining({ source: 'ocr' }),
+      expect.anything(),
+    );
+    expect(repository.createTransactionAttachment).toHaveBeenCalledWith(expect.anything(), {
+      transactionId: 'transaction_1',
+      fileUrl: 'receipts/ledger_1/2026/05/file.png',
+      fileType: 'image/png',
+      storageKey: 'receipts/ledger_1/2026/05/file.png',
+    });
   });
 
   it('rejects a pending extraction without creating a transaction', async () => {

@@ -125,16 +125,33 @@ export class AiInternalClient {
 function isInternalAiOcrResult(value: unknown): value is InternalAiOcrResult {
   if (!value || typeof value !== 'object') return false;
   if (!('status' in value) || (value.status !== 'succeeded' && value.status !== 'failed')) return false;
-  if (!('candidate' in value)) return false;
-  if (value.status === 'failed') return true;
-  const candidate = (value as Record<string, unknown>).candidate;
-  if (!candidate || typeof candidate !== 'object') return false;
-  const c = candidate as Record<string, unknown>;
+  if (!('candidate' in value) || !('rawResult' in value)) return false;
+  if (value.status === 'failed') {
+    return value.candidate === null && isNullableRecord(value.rawResult);
+  }
+  return isInternalAiOcrCandidate((value as Record<string, unknown>).candidate) && isNullableRecord(value.rawResult);
+}
+
+function isInternalAiOcrCandidate(value: unknown): value is InternalAiOcrResult['candidate'] {
+  if (!value || typeof value !== 'object') return false;
+  const candidate = value as Record<string, unknown>;
   return (
-    (c.type === 'income' || c.type === 'expense') &&
-    typeof c.amount === 'string' &&
-    typeof c.currency === 'string' &&
-    typeof c.confidence === 'number'
+    (candidate.type === 'income' || candidate.type === 'expense') &&
+    isPositiveDecimalString(candidate.amount) &&
+    typeof candidate.currency === 'string' &&
+    /^[A-Z]{3}$/.test(candidate.currency) &&
+    typeof candidate.occurredAt === 'string' &&
+    Number.isFinite(Date.parse(candidate.occurredAt)) &&
+    isNullableString(candidate.categoryName) &&
+    isNullableString(candidate.accountHint) &&
+    isNullableString(candidate.merchant) &&
+    isNullableString(candidate.note) &&
+    typeof candidate.confidence === 'number' &&
+    candidate.confidence >= 0 &&
+    candidate.confidence <= 1 &&
+    isOptionalMissingFields(candidate.missingFields) &&
+    isOptionalNullableString(candidate.reviewMessage) &&
+    isOptionalReceipt(candidate.receipt)
   );
 }
 
@@ -191,6 +208,29 @@ function isOptionalMissingFields(value: unknown): value is Array<'accountId' | '
   return (
     value === undefined ||
     (Array.isArray(value) && value.every((field) => field === 'accountId' || field === 'categoryId'))
+  );
+}
+
+function isOptionalReceipt(value: unknown): boolean {
+  if (value === undefined || value === null) return true;
+  if (typeof value !== 'object' || Array.isArray(value)) return false;
+  const receipt = value as Record<string, unknown>;
+  return (
+    isNullableString(receipt.invoiceNo) &&
+    isNullableString(receipt.taxNo) &&
+    Array.isArray(receipt.items) &&
+    receipt.items.every(isReceiptItem)
+  );
+}
+
+function isReceiptItem(value: unknown): boolean {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
+  const item = value as Record<string, unknown>;
+  return (
+    typeof item.name === 'string' &&
+    isOptionalNullableString(item.quantity) &&
+    isOptionalNullableString(item.unitPrice) &&
+    isPositiveDecimalString(item.amount)
   );
 }
 

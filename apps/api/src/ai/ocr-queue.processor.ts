@@ -27,7 +27,7 @@ export class OcrQueueProcessor extends WorkerHost {
     await this.aiRepository.markTaskProcessing(taskId);
 
     try {
-      const signedUrl = await this.storageService.getSignedUrl('bookkeeping-receipts', storageKey);
+      const signedUrl = await this.storageService.getSignedUrl(this.storageService.getReceiptBucketName(), storageKey);
       const context = await this.aiRepository.getTextParseContext(ledgerId, userId);
 
       if (!context) {

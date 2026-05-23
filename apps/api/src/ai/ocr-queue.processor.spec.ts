@@ -43,6 +43,7 @@ describe('OcrQueueProcessor', () => {
       }),
     };
     mockStorage = {
+      getReceiptBucketName: jest.fn().mockReturnValue('test-receipts'),
       getSignedUrl: jest.fn().mockResolvedValue('http://minio/signed-url'),
     };
 
@@ -72,7 +73,7 @@ describe('OcrQueueProcessor', () => {
     await processor.process(job);
 
     expect(mockRepo.markTaskProcessing).toHaveBeenCalledWith('task-1');
-    expect(mockStorage.getSignedUrl).toHaveBeenCalled();
+    expect(mockStorage.getSignedUrl).toHaveBeenCalledWith('test-receipts', 'receipts/test.jpg');
     expect(mockClient.parseReceiptOcr).toHaveBeenCalled();
     expect(mockRepo.createExtraction).toHaveBeenCalled();
     expect(mockRepo.markTaskSucceeded).toHaveBeenCalledWith('task-1');

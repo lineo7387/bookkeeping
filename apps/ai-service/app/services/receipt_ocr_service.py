@@ -62,7 +62,7 @@ async def parse_receipt(request: ReceiptOcrRequest) -> ReceiptOcrResponse:
     account_hint = _match_first(full_text, request.context.account_hints)
 
     if amount is None:
-        amount = "0.00"
+        return _failed_response(request.task_id, "AI_OCR_AMOUNT_NOT_FOUND", "未能识别票据金额")
 
     confidence = 0.80
     if amount != "0.00":

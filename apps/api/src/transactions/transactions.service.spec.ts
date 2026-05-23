@@ -176,6 +176,25 @@ describe('TransactionsService', () => {
     expect(repository.createWithBalanceChanges).not.toHaveBeenCalled();
   });
 
+  it('rejects AI-created transactions with zero amount before writing balances', async () => {
+    policy.canCreateTransaction.mockResolvedValue(true);
+
+    await expect(
+      service.createFromAiExtraction('user_1', {
+        ledgerId: 'ledger_1',
+        accountId: 'account_1',
+        categoryId: 'category_1',
+        type: 'expense',
+        amount: '0.00',
+        currency: 'CNY',
+        occurredAt: '2026-05-19T11:00:00.000Z',
+        sourceExtractionId: 'extraction_1',
+      }),
+    ).rejects.toBeInstanceOf(BadRequestException);
+
+    expect(repository.createWithBalanceChanges).not.toHaveBeenCalled();
+  });
+
   it('forces private transaction visibility when the source account is private', async () => {
     const privateAccount = { ...account, visibility: 'private' as const };
     policy.canCreateTransaction.mockResolvedValue(true);

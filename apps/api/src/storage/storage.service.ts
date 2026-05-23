@@ -1,4 +1,4 @@
-import { Inject, Injectable, InternalServerErrorException, Logger } from '@nestjs/common';
+import { Inject, Injectable, InternalServerErrorException, Logger, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import {
   type S3Client,
@@ -13,13 +13,21 @@ import { fail } from '../common/api-response';
 import { DEFAULT_SIGNED_URL_EXPIRES_SECONDS, STORAGE_S3_CLIENT } from './storage.constants';
 
 @Injectable()
-export class StorageService {
+export class StorageService implements OnModuleInit {
   private readonly logger = new Logger(StorageService.name);
 
   constructor(
     @Inject(STORAGE_S3_CLIENT) private readonly s3: S3Client,
     private readonly configService: ConfigService,
   ) {}
+
+  async onModuleInit(): Promise<void> {
+    await this.ensureBucket(this.getReceiptBucketName());
+  }
+
+  getReceiptBucketName(): string {
+    return this.configService.get<string>('STORAGE_RECEIPT_BUCKET') ?? 'bookkeeping-receipts';
+  }
 
   async upload(bucket: string, key: string, buffer: Buffer, mimeType: string): Promise<string> {
     try {
