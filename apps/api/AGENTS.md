@@ -4,7 +4,11 @@
 
 `apps/api` 是 NestJS 主业务服务，是系统唯一对外业务 API。它负责认证、权限、账本协作、账户、分类、流水、统计、附件、AI 任务编排、后台管理和数据一致性。
 
-当前已完成认证与会话、用户资料、账本与成员权限、账户、分类、流水基础闭环、M2 账户余额流水联动、基础统计 API、审计日志基础写入与业务接入能力，以及后台只读 Admin API 基础能力。正式流水创建、更新和软删除必须在同一个 Prisma transaction 内调整相关账户余额。
+当前已完成认证与会话、用户资料、账本与成员权限、账户、分类、流水基础闭环、M2 账户余额流水联动、基础统计 API、审计日志基础写入与业务接入能力、后台只读 Admin API 基础能力，以及 M4 AI 文本记账 NestJS 闭环和后续加固。M4 低置信度候选会保留 `missingFields` / `reviewMessage` 补全提示，但确认正式流水仍必须重新校验账本权限、账户和分类。Prisma 7 运行时通过 PostgreSQL driver adapter 初始化。正式流水创建、更新、软删除和 AI 候选确认必须在同一个 Prisma transaction 内处理核心状态和相关账户余额。
+
+本地开发可通过 `pnpm --filter @bookkeeping/api admin:bootstrap -- --email <email> --password <password>` 创建或提权系统管理员账号。该脚本只用于本地/运维 bootstrap，不是公开 API。
+
+M4 文本记账本地闭环可在 FastAPI、NestJS 和 PostgreSQL 均启动后运行 `pnpm e2e:m4:ai-text`。该脚本只调用 NestJS 对外 API，不能改成前端、后台 Web、移动端或 `@bookkeeping/api-client` 直接请求 FastAPI。
 
 ## 修改前检查
 
@@ -67,7 +71,7 @@ src/
   transactions/
   statistics/             # 基础统计
   audit-logs/             # 审计日志基础写入
-  ai/                     # 后续 AI 任务编排，只调用内部 FastAPI
+  ai/                     # M4 AI 任务编排，只调用内部 FastAPI
   attachments/            # 后续票据和对象存储
   admin/                  # 后续后台管理 API
 ```
@@ -96,6 +100,8 @@ src/
 - 时间统一存 UTC，账本保存 timezone；交易时间入参必须避免时区歧义。
 - 重要删除优先软删除。
 - AI 服务只返回候选结果，用户确认后才由 NestJS 创建正式流水。
+- M4 文本 AI 候选当前只支持 `income | expense`；不要在未设计目标账户补全规则前开放 transfer 候选确认。
+- 内部 FastAPI 调用必须设置超时并校验响应结构，不能把坏候选直接落库。
 - 其他模块不得直接调用 FastAPI；只能通过后续 `ai` 模块统一编排。
 - 后台 Admin API 必须同时通过 JWT 和 `SystemAdminGuard`，系统管理员权限来自 `users.is_system_admin`，不得替代账本成员 Policy。
 
@@ -105,6 +111,7 @@ src/
 pnpm --filter @bookkeeping/api test
 pnpm --filter @bookkeeping/api typecheck
 pnpm --filter @bookkeeping/api build
+pnpm verify:scripts
 ```
 
 窄范围改动可先运行对应 `.spec.ts`，完成前再运行相关包级验证。

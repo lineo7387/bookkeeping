@@ -73,17 +73,39 @@ describe('AdminService', () => {
         limit: 20,
         offset: 0,
       }),
+      listAiTasks: jest.fn().mockResolvedValue({
+        items: [
+          {
+            id: 'task_1',
+            status: 'succeeded',
+            type: 'text_parse',
+            createdAt: '2026-05-19T11:00:00.000Z',
+            updatedAt: '2026-05-19T11:01:00.000Z',
+          },
+        ],
+        limit: 20,
+        offset: 0,
+      }),
     };
     const service = new AdminService(repository as unknown as AdminRepository);
 
     await expect(service.listLedgers({ limit: 20, offset: 0 })).resolves.toMatchObject({
       items: [{ id: 'ledger_1', memberCount: 2 }],
     });
-    await expect(service.listAiTasks({ limit: 20, offset: 0 })).resolves.toEqual({
-      items: [],
+    await expect(service.listAiTasks({ limit: 20, offset: 0, status: 'failed', type: 'text_parse' })).resolves.toEqual({
+      items: [
+        {
+          id: 'task_1',
+          status: 'succeeded',
+          type: 'text_parse',
+          createdAt: '2026-05-19T11:00:00.000Z',
+          updatedAt: '2026-05-19T11:01:00.000Z',
+        },
+      ],
       limit: 20,
       offset: 0,
     });
+    expect(repository.listAiTasks).toHaveBeenCalledWith({ limit: 20, offset: 0, status: 'failed', type: 'text_parse' });
     await expect(service.listAuditLogs({ limit: 20, offset: 0 })).resolves.toMatchObject({
       items: [{ id: 'audit_1', metadata: { amount: '86.00' } }],
     });

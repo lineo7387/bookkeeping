@@ -177,6 +177,22 @@ export interface PaginatedItems<T> {
   offset: number;
 }
 
+export interface PublicUser {
+  id: string;
+  email: string;
+  nickname: string;
+  avatarUrl: string | null;
+  status: 'active' | 'disabled';
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AuthResult {
+  user: PublicUser;
+  accessToken: string;
+  refreshToken: string;
+}
+
 export interface AdminUserSummary {
   id: string;
   email: string;
@@ -204,7 +220,7 @@ export interface AdminLedgerSummary {
 export interface AdminAiTaskSummary {
   id: string;
   status: AiTaskStatus;
-  type: string;
+  type: AiTaskType;
   createdAt: string;
   updatedAt: string;
 }
@@ -223,7 +239,11 @@ export interface AdminAuditLogSummary {
 
 export type AiTaskStatus = 'pending' | 'processing' | 'succeeded' | 'failed';
 
+export type AiTaskType = 'text_parse' | 'receipt_ocr' | 'classify' | 'insight';
+
 export type AiExtractionStatus = 'pending' | 'confirmed' | 'rejected';
+
+export type AiCandidateMissingField = 'accountId' | 'categoryId';
 
 export interface AiCandidateReceiptItem {
   name: string;
@@ -250,6 +270,8 @@ export interface AiCandidateTransaction {
   merchant: string | null;
   note: string | null;
   confidence: number;
+  missingFields?: AiCandidateMissingField[];
+  reviewMessage?: string | null;
   receipt?: AiCandidateReceipt;
 }
 
@@ -262,4 +284,29 @@ export interface AiExtractionSummary {
   confidence: number;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface AiTextParseResult {
+  taskId: string;
+  ledgerId: string;
+  status: AiTaskStatus;
+  extraction: AiExtractionSummary | null;
+}
+
+export interface AiTaskDetail {
+  id: string;
+  ledgerId: string;
+  type: AiTaskType;
+  status: AiTaskStatus;
+  errorMessage: string | null;
+  extraction: AiExtractionSummary | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ConfirmAiExtractionResult {
+  ledgerId: string;
+  transactionId: string;
+  extraction: AiExtractionSummary;
+  transaction: TransactionSummary;
 }

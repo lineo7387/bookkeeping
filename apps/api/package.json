@@ -4,6 +4,8 @@
   "description": "NestJS API service for the Bookkeeping platform.",
   "main": "dist/src/main",
   "scripts": {
+    "admin:bootstrap": "node scripts/bootstrap-admin.mjs",
+    "ai:e2e:text": "node scripts/m4-ai-text-e2e.mjs",
     "build": "nest build",
     "dev": "nest start --watch",
     "prisma": "prisma",
@@ -30,6 +32,7 @@
     "@nestjs/jwt": "^11.0.2",
     "@nestjs/passport": "^11.0.5",
     "@nestjs/platform-express": "^11.1.21",
+    "@prisma/adapter-pg": "^7.8.0",
     "@prisma/client": "^7.8.0",
     "argon2": "^0.44.0",
     "class-transformer": "^0.5.1",
@@ -37,6 +40,7 @@
     "dotenv": "^17.4.2",
     "passport": "^0.7.0",
     "passport-jwt": "^4.0.1",
+    "pg": "^8.21.0",
     "reflect-metadata": "~0.2.2"
   },
   "devDependencies": {

@@ -17,6 +17,8 @@ Agent 协作上下文用于让 AI 在 monorepo 中快速识别项目边界、技
 - 子项目规则应包含：模块定位、修改前检查、推荐 Agent skills、技术栈最佳实践、推荐目录架构、验证命令和禁止事项。
 - 新增业务功能前仍需先检查对应中文模块文档；缺少模块文档时，应先补文档再实现。
 - 未创建代码脚手架的规划目录可以先维护 `AGENTS.md`，但不得提前创建业务代码、package.json 或框架配置。
+- 完成任一里程碑、功能闭环、接口契约变化、验证命令变化或下一轮建议变化后，必须同步检查根 `AGENTS.md`、最近子项目 `AGENTS.md`、`.codex/project-context.md`、`docs/handover/开发交接说明.md` 和相关模块文档。
+- 如果检查后确认无需更新上下文，应在最终交付说明中明确“已检查上下文，无需同步”。
 
 ## 当前上下文文件
 
@@ -24,7 +26,7 @@ Agent 协作上下文用于让 AI 在 monorepo 中快速识别项目边界、技
 
 - `apps/api/AGENTS.md`：NestJS 主业务服务。
 - `apps/admin-web/AGENTS.md`：Vue 后台管理端。
-- `apps/ai-service/AGENTS.md`：规划中的 FastAPI AI 服务。
+- `apps/ai-service/AGENTS.md`：已创建的 FastAPI AI 服务，当前提供 M4 文本记账 deterministic parser。
 - `apps/mobile/AGENTS.md`：规划中的 uni-app 用户多端。
 
 已维护的共享包上下文：
@@ -73,7 +75,7 @@ git diff --check
 
 ## 后续扩展点
 
-- `apps/ai-service` 脚手架创建后，按实际 Python 工具链补充验证命令。
+- `apps/ai-service` 当前使用 `uv` 管理，验证命令为 `cd apps/ai-service && uv run pytest`；本地开发可使用 `uv run uvicorn app.main:app --host 127.0.0.1 --port 8000`。
 - `apps/mobile` 脚手架创建后，按实际 uni-app package scripts 补充验证命令。
 - `packages/validation` 创建后，补充共享校验选型和测试策略。
 - `packages/config` 创建后，补充共享 tsconfig、lint、format 的导出方式。

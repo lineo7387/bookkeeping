@@ -63,7 +63,8 @@ type CategoryRecord = {
   updatedAt: Date;
 };
 
-type TransactionClient = {
+export type TransactionClient = {
+  auditLog: Prisma.TransactionClient['auditLog'];
   transaction: {
     create(args: Prisma.TransactionCreateArgs): Promise<TransactionRecord>;
     updateMany(args: Prisma.TransactionUpdateManyArgs): Promise<Prisma.BatchPayload>;
@@ -75,6 +76,10 @@ type TransactionClient = {
 };
 
 export type TransferMetadata = { transferTargetAccountId: string };
+export type TransactionMetadata = {
+  transferTargetAccountId?: string;
+  aiExtractionId?: string;
+};
 
 export interface TransactionCreateData {
   ledgerId: string;
@@ -88,8 +93,8 @@ export interface TransactionCreateData {
   note?: string | null;
   visibility: 'ledger' | 'private';
   createdBy: string;
-  source: 'manual';
-  metadata?: TransferMetadata | null;
+  source: TransactionSource;
+  metadata?: TransactionMetadata | null;
 }
 
 export interface TransactionUpdateData {
@@ -102,7 +107,7 @@ export interface TransactionUpdateData {
   merchant?: string | null;
   note?: string | null;
   visibility?: 'ledger' | 'private';
-  metadata?: TransferMetadata | null;
+  metadata?: TransactionMetadata | null;
 }
 
 export interface AccountBalanceChange {
@@ -167,27 +172,18 @@ export class TransactionsRepository {
     balanceChanges: AccountBalanceChange[],
   ): Promise<TransactionSummary> {
     const transaction = await this.prisma.$transaction(async (tx) => {
-      const created = await tx.transaction.create({
-        data: {
-          ledgerId: data.ledgerId,
-          accountId: data.accountId,
-          categoryId: data.categoryId,
-          type: data.type,
-          amount: data.amount,
-          currency: data.currency,
-          occurredAt: data.occurredAt,
-          merchant: data.merchant,
-          note: data.note,
-          visibility: data.visibility,
-          createdBy: data.createdBy,
-          source: data.source,
-          metadata: toPrismaJson(data.metadata),
-        },
-      });
-      await applyBalanceChanges(tx, balanceChanges);
-      return created;
+      return createWithBalanceChangesUsingClient(tx, data, balanceChanges);
     });
 
+    return toTransactionSummary(transaction);
+  }
+
+  async createWithBalanceChangesInTransaction(
+    tx: TransactionClient,
+    data: TransactionCreateData,
+    balanceChanges: AccountBalanceChange[],
+  ): Promise<TransactionSummary> {
+    const transaction = await createWithBalanceChangesUsingClient(tx, data, balanceChanges);
     return toTransactionSummary(transaction);
   }
 
@@ -367,7 +363,9 @@ function toMetadataRecord(metadata: unknown): Record<string, unknown> | null {
   return metadata as Record<string, unknown>;
 }
 
-function toPrismaJson(metadata: TransferMetadata | null | undefined): Prisma.InputJsonValue | typeof Prisma.JsonNull | undefined {
+function toPrismaJson(
+  metadata: TransactionMetadata | null | undefined,
+): Prisma.InputJsonValue | typeof Prisma.JsonNull | undefined {
   if (metadata === undefined) {
     return undefined;
   }
@@ -390,6 +388,32 @@ function toTransactionUpdateInput(data: TransactionUpdateData): Prisma.Transacti
     visibility: data.visibility,
     metadata: data.metadata === undefined ? undefined : toPrismaJson(data.metadata),
   };
+}
+
+async function createWithBalanceChangesUsingClient(
+  tx: TransactionClient,
+  data: TransactionCreateData,
+  balanceChanges: AccountBalanceChange[],
+): Promise<TransactionRecord> {
+  const created = await tx.transaction.create({
+    data: {
+      ledgerId: data.ledgerId,
+      accountId: data.accountId,
+      categoryId: data.categoryId,
+      type: data.type,
+      amount: data.amount,
+      currency: data.currency,
+      occurredAt: data.occurredAt,
+      merchant: data.merchant,
+      note: data.note,
+      visibility: data.visibility,
+      createdBy: data.createdBy,
+      source: data.source,
+      metadata: toPrismaJson(data.metadata),
+    },
+  });
+  await applyBalanceChanges(tx, balanceChanges);
+  return created;
 }
 
 async function applyBalanceChanges(tx: TransactionClient, changes: AccountBalanceChange[]): Promise<void> {

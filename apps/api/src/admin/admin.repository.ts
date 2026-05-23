@@ -1,18 +1,19 @@
 import { Injectable } from '@nestjs/common';
 import type {
+  AdminAiTaskSummary,
   AdminAuditLogSummary,
   AdminLedgerSummary,
   AdminUserSummary,
   PaginatedItems,
 } from '@bookkeeping/shared-types';
 import { PrismaService } from '../prisma/prisma.service';
-import type { ListAdminQueryDto } from './dto/list-admin-query.dto';
+import type { NormalizedAdminQuery } from './dto/list-admin-query.dto';
 
 @Injectable()
 export class AdminRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  async listUsers(query: Required<ListAdminQueryDto>): Promise<PaginatedItems<AdminUserSummary>> {
+  async listUsers(query: NormalizedAdminQuery): Promise<PaginatedItems<AdminUserSummary>> {
     const users = await this.prisma.user.findMany({
       orderBy: { createdAt: 'desc' },
       skip: query.offset,
@@ -45,7 +46,7 @@ export class AdminRepository {
     };
   }
 
-  async listLedgers(query: Required<ListAdminQueryDto>): Promise<PaginatedItems<AdminLedgerSummary>> {
+  async listLedgers(query: NormalizedAdminQuery): Promise<PaginatedItems<AdminLedgerSummary>> {
     const ledgers = await this.prisma.ledger.findMany({
       orderBy: { createdAt: 'desc' },
       skip: query.offset,
@@ -82,7 +83,38 @@ export class AdminRepository {
     };
   }
 
-  async listAuditLogs(query: Required<ListAdminQueryDto>): Promise<PaginatedItems<AdminAuditLogSummary>> {
+  async listAiTasks(query: NormalizedAdminQuery): Promise<PaginatedItems<AdminAiTaskSummary>> {
+    const tasks = await this.prisma.aiTask.findMany({
+      where: {
+        status: query.status,
+        type: query.type,
+      },
+      orderBy: { createdAt: 'desc' },
+      skip: query.offset,
+      take: query.limit,
+      select: {
+        id: true,
+        status: true,
+        type: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+    });
+
+    return {
+      items: tasks.map((task) => ({
+        id: task.id,
+        status: task.status,
+        type: task.type,
+        createdAt: task.createdAt.toISOString(),
+        updatedAt: task.updatedAt.toISOString(),
+      })),
+      limit: query.limit,
+      offset: query.offset,
+    };
+  }
+
+  async listAuditLogs(query: NormalizedAdminQuery): Promise<PaginatedItems<AdminAuditLogSummary>> {
     const auditLogs = await this.prisma.auditLog.findMany({
       orderBy: { createdAt: 'desc' },
       skip: query.offset,

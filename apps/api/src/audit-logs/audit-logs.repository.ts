@@ -12,12 +12,29 @@ export interface AuditLogCreateData {
   metadata?: Record<string, unknown> | null;
 }
 
+export type AuditLogTransactionClient = {
+  auditLog: {
+    create(args: Prisma.AuditLogCreateArgs): Promise<{
+      id: string;
+      actorUserId: string | null;
+      ledgerId: string | null;
+      targetType: string;
+      targetId: string | null;
+      action: string;
+      summary: string;
+      metadata: unknown;
+      createdAt: Date;
+    }>;
+  };
+};
+
 @Injectable()
 export class AuditLogsRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  async create(data: AuditLogCreateData) {
-    const auditLog = await this.prisma.auditLog.create({
+  async create(data: AuditLogCreateData, tx?: AuditLogTransactionClient) {
+    const client = tx ?? this.prisma;
+    const auditLog = await client.auditLog.create({
       data: {
         actorUserId: data.actorUserId ?? null,
         ledgerId: data.ledgerId ?? null,

@@ -2,7 +2,7 @@ import { Controller, Get, Query, UseGuards } from '@nestjs/common';
 import { ok } from '../common/api-response';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { AdminService } from './admin.service';
-import { ListAdminQueryDto } from './dto/list-admin-query.dto';
+import { ListAdminAiTasksQueryDto, ListAdminQueryDto } from './dto/list-admin-query.dto';
 import { SystemAdminGuard } from './system-admin.guard';
 
 @Controller('admin')
@@ -21,7 +21,7 @@ export class AdminController {
   }
 
   @Get('ai/tasks')
-  async listAiTasks(@Query() query: ListAdminQueryDto) {
+  async listAiTasks(@Query() query: ListAdminAiTasksQueryDto) {
     return ok(await this.adminService.listAiTasks(query));
   }
 

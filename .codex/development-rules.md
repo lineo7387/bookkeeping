@@ -7,6 +7,9 @@
 - 功能文档至少包含：功能目标、业务规则、数据模型、接口说明、权限规则、异常情况、测试与验证方式、后续扩展点。
 - 代码命名、接口字段、数据库字段使用英文。
 - 文档、交接说明和产品说明使用简体中文。
+- 每轮有实质变更完成前，必须检查 `AGENTS.md`、当前子项目 `AGENTS.md`、`.codex/project-context.md`、`docs/handover/开发交接说明.md` 和相关模块文档是否需要同步当前状态、下一轮建议、验证命令或边界规则。
+- 新对话启动优先使用 `.codex/checklists/startup.md`，收尾优先使用 `.codex/checklists/handoff.md`，避免每轮重复粘贴长提示词。
+- 如果上下文需要同步，应和功能变更一起提交；如果无需同步，应在最终回复中说明已检查。
 
 ## 架构规则
 
@@ -44,6 +47,8 @@
 - 每个可验证的小步骤尽量独立提交。
 - 提交信息使用英文 Conventional Commits。
 - 示例：`docs: add project agent guidelines`、`feat: add ledger module skeleton`。
+- 提交前必须完成上下文同步检查，避免新对话读到过期状态。
+- 推荐安装仓库 hooks：`pnpm hooks:install`。当前 pre-commit 只运行轻量空白检查，完整验证仍按改动范围运行 `pnpm verify:*`。
 
 ## 脚手架协作规则
 

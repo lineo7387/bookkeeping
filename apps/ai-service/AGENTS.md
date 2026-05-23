@@ -2,9 +2,9 @@
 
 ## 模块定位
 
-`apps/ai-service` 是规划中的 FastAPI 独立 AI 服务，只负责文本记账解析、票据识别、分类建议和消费洞察等 AI 能力。它不对前端开放，不维护主业务状态。
+`apps/ai-service` 是 FastAPI 独立 AI 服务，只负责文本记账解析、票据识别、分类建议和消费洞察等 AI 能力。它不对前端开放，不维护主业务状态。
 
-当前仅维护协作说明，尚未创建代码脚手架。创建脚手架命令应由用户执行。
+当前已由用户使用 `uv` 创建最小 Python 项目，并已接入 M4 文本记账内部契约 `POST /internal/ai/text-transaction` 的确定性 MVP parser。金额可识别但分类或账户不明确时，parser 会返回低置信度候选和 `missingFields` / `reviewMessage`，仍由 NestJS 保存候选并等待用户确认。后续新增依赖优先使用 `uv add` 或 `uv add --dev`。
 
 ## 修改前检查
 
@@ -76,8 +76,8 @@ app/
 脚手架创建后再以实际工具为准，优先提供：
 
 ```bash
-pytest
-fastapi dev
+uv run pytest
+uv run uvicorn app.main:app --host 127.0.0.1 --port 8000
 ```
 
 ## 禁止事项

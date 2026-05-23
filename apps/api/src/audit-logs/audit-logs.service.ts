@@ -1,5 +1,9 @@
 import { Injectable } from '@nestjs/common';
-import { AuditLogsRepository, type AuditLogCreateData } from './audit-logs.repository';
+import {
+  AuditLogsRepository,
+  type AuditLogCreateData,
+  type AuditLogTransactionClient,
+} from './audit-logs.repository';
 
 const SENSITIVE_METADATA_KEYS = new Set(['password', 'passwordHash', 'refreshToken', 'refreshTokenHash', 'token']);
 
@@ -7,11 +11,13 @@ const SENSITIVE_METADATA_KEYS = new Set(['password', 'passwordHash', 'refreshTok
 export class AuditLogsService {
   constructor(private readonly auditLogsRepository: AuditLogsRepository) {}
 
-  async record(data: AuditLogCreateData) {
-    return this.auditLogsRepository.create({
+  async record(data: AuditLogCreateData, tx?: AuditLogTransactionClient) {
+    const sanitized = {
       ...data,
       metadata: sanitizeMetadata(data.metadata),
-    });
+    };
+
+    return tx ? this.auditLogsRepository.create(sanitized, tx) : this.auditLogsRepository.create(sanitized);
   }
 }
 

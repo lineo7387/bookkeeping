@@ -8,6 +8,10 @@
 pnpm --filter @bookkeeping/admin-web dev
 ```
 
+本地开发默认把 `/api` 代理到 `http://127.0.0.1:3000`，因此需先启动 `@bookkeeping/api`。如果不使用代理，也可以通过 `VITE_API_BASE_URL` 指向 NestJS API 地址。
+
+后台只读接口需要系统管理员 access token。启动页面后可使用已设置 `users.is_system_admin = true` 的账号登录；登录请求走 NestJS `POST /auth/login`，access token 会写入 Pinia 持久化会话 `bookkeeping_admin_session`。
+
 ## 验证
 
 ```bash

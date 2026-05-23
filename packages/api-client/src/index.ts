@@ -1,7 +1,10 @@
 import type {
   AiCandidateTransaction,
   AiExtractionSummary,
+  AiTaskDetail,
+  AiTextParseResult,
   AiTaskStatus,
+  AiTaskType,
   AdminAiTaskSummary,
   AdminAuditLogSummary,
   AdminLedgerSummary,
@@ -9,7 +12,8 @@ import type {
   ApiError,
   ApiResponse,
   PaginatedItems,
-  TransactionVisibility,
+  ConfirmAiExtractionResult,
+  AuthResult,
 } from '@bookkeeping/shared-types';
 
 export interface BookkeepingApiClientOptions {
@@ -26,22 +30,9 @@ export interface AiTextParseRequest {
   defaultCurrency?: string;
 }
 
-export interface AiTextParseResult {
-  taskId: string;
-  ledgerId: string;
-  status: AiTaskStatus;
-  extraction: AiExtractionSummary | null;
-}
-
-export interface AiTaskDetail {
-  id: string;
-  ledgerId: string;
-  type: 'text_parse' | 'receipt_ocr' | 'classify' | 'insight';
-  status: AiTaskStatus;
-  errorMessage: string | null;
-  extraction: AiExtractionSummary | null;
-  createdAt: string;
-  updatedAt: string;
+export interface LoginRequest {
+  email: string;
+  password: string;
 }
 
 export interface ConfirmAiExtractionRequest {
@@ -50,14 +41,8 @@ export interface ConfirmAiExtractionRequest {
   categoryId?: string;
   amount?: string;
   occurredAt?: string;
-  visibility?: TransactionVisibility;
+  visibility?: 'ledger' | 'private';
   note?: string | null;
-}
-
-export interface ConfirmAiExtractionResult {
-  ledgerId: string;
-  transactionId: string;
-  extraction: AiExtractionSummary;
 }
 
 export interface RejectAiExtractionRequest {
@@ -69,6 +54,11 @@ export type RejectAiExtractionResult = AiExtractionSummary;
 export interface AdminListQuery {
   limit?: number;
   offset?: number;
+}
+
+export interface AdminAiTasksQuery extends AdminListQuery {
+  status?: AiTaskStatus;
+  type?: AiTaskType;
 }
 
 export class BookkeepingApiClient {
@@ -88,6 +78,13 @@ export class BookkeepingApiClient {
     }
   }
 
+  login(body: LoginRequest): Promise<ApiResponse<AuthResult>> {
+    return this.request<AuthResult>('/auth/login', {
+      method: 'POST',
+      body,
+    });
+  }
+
   parseAiText(
     ledgerId: string,
     body: AiTextParseRequest,
@@ -102,6 +99,18 @@ export class BookkeepingApiClient {
     return this.request<AiTaskDetail>(`/ai/tasks/${encodeURIComponent(taskId)}`, {
       method: 'GET',
     });
+  }
+
+  listLedgerAiTasks(
+    ledgerId: string,
+    query: AdminListQuery = {},
+  ): Promise<ApiResponse<PaginatedItems<AiTaskDetail>>> {
+    return this.request<PaginatedItems<AiTaskDetail>>(
+      `/ledgers/${encodeURIComponent(ledgerId)}/ai/tasks${toQueryString(query)}`,
+      {
+        method: 'GET',
+      },
+    );
   }
 
   confirmAiExtraction(
@@ -150,7 +159,7 @@ export class BookkeepingApiClient {
   }
 
   listAdminAiTasks(
-    query: AdminListQuery = {},
+    query: AdminAiTasksQuery = {},
   ): Promise<ApiResponse<PaginatedItems<AdminAiTaskSummary>>> {
     return this.request<PaginatedItems<AdminAiTaskSummary>>(
       `/admin/ai/tasks${toQueryString(query)}`,
@@ -340,7 +349,7 @@ function toErrorDetails(error: unknown): unknown {
   return error;
 }
 
-function toQueryString(query: AdminListQuery): string {
+function toQueryString(query: AdminListQuery & Pick<AdminAiTasksQuery, 'status' | 'type'>): string {
   const params = new URLSearchParams();
 
   if (query.limit !== undefined) {
@@ -351,8 +360,25 @@ function toQueryString(query: AdminListQuery): string {
     params.set('offset', String(query.offset));
   }
 
+  if (query.status !== undefined) {
+    params.set('status', String(query.status));
+  }
+
+  if (query.type !== undefined) {
+    params.set('type', String(query.type));
+  }
+
   const value = params.toString();
   return value ? `?${value}` : '';
 }
 
-export type { AiCandidateTransaction, AiExtractionSummary, ApiError, ApiResponse };
+export type {
+  AiCandidateTransaction,
+  AiExtractionSummary,
+  AiTaskDetail,
+  AiTextParseResult,
+  AuthResult,
+  ApiError,
+  ApiResponse,
+  ConfirmAiExtractionResult,
+};

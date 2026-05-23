@@ -2,7 +2,7 @@
 
 ## 模块定位
 
-`apps/admin-web` 是后台管理端，用于运营和排查系统状态。第一阶段重点覆盖系统健康、用户与账本概况、AI 任务队列、审计活动和后续管理入口；当前首页已接入 M3 后台只读 Admin API。
+`apps/admin-web` 是后台管理端，用于运营和排查系统状态。第一阶段重点覆盖系统管理员登录、系统健康、用户与账本概况、AI 任务队列、审计活动和后续管理入口；当前已提供系统管理员登录页，并接入 M3/M4 后台只读 Admin API，首页 AI 任务队列和独立 AI 任务列表页支持状态/类型筛选。
 
 ## 修改前检查
 
@@ -77,12 +77,12 @@ src/
 
 ## API 调用规则
 
-- 当前后台 Web 首页已通过 `@bookkeeping/api-client` 接入 NestJS Admin API。
+- 当前后台 Web 已通过 `@bookkeeping/api-client` 接入 NestJS `POST /auth/login` 和 Admin API。
 - 后续接入真实接口时，只能通过 NestJS API。
 - 优先通过 `@bookkeeping/api-client` 访问后端，不在组件中直接拼 FastAPI 或内部服务地址。
 - API 响应类型优先来自 `@bookkeeping/shared-types`。
-- 本地调试默认读取 `VITE_API_BASE_URL` 作为 NestJS API baseUrl，未配置时使用 `/api`。
-- 后台 Web 已接入 Pinia 和 `pinia-plugin-persistedstate`；会话 token、导航偏好和筛选偏好可进入 store，用户列表、审计日志等敏感查询结果不得持久化。
+- 本地调试默认读取 `VITE_API_BASE_URL` 作为 NestJS API baseUrl，未配置时使用 `/api` 并由 Vite dev server 代理到 `http://127.0.0.1:3000`。
+- 后台 Web 已接入 Pinia 和 `pinia-plugin-persistedstate`；系统管理员登录成功后只持久化 access token，导航偏好和筛选偏好可进入 store，用户列表、审计日志等敏感查询结果不得持久化。
 - `@bookkeeping/api-client` 是跨应用共享 SDK；后台 Web 必须通过 `src/services/apiClient.ts` 这类本应用适配层注入 token、baseUrl 和后续缓存策略，不要在页面组件中直接创建共享 client。
 
 ## 验证命令

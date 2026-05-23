@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { AccountsModule } from './accounts/accounts.module';
 import { AdminModule } from './admin/admin.module';
+import { AiModule } from './ai/ai.module';
 import { AuditLogsModule } from './audit-logs/audit-logs.module';
 import { AuthModule } from './auth/auth.module';
 import { CategoriesModule } from './categories/categories.module';
@@ -18,6 +19,7 @@ import { UsersModule } from './users/users.module';
       isGlobal: true,
     }),
     AdminModule,
+    AiModule,
     AuthModule,
     AccountsModule,
     AuditLogsModule,

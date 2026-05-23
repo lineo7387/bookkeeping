@@ -13,10 +13,27 @@ import type { ListTransactionsQueryDto } from './dto/list-transactions-query.dto
 import type { UpdateTransactionDto } from './dto/update-transaction.dto';
 import {
   TransactionsRepository,
+  type TransactionClient,
   type TransactionCreateData,
+  type TransactionMetadata,
   type TransactionUpdateData,
   type TransferMetadata,
 } from './transactions.repository';
+
+export interface CreateTransactionFromAiInput {
+  ledgerId: string;
+  accountId: string;
+  categoryId?: string | null;
+  type: TransactionType;
+  amount: string;
+  currency?: string;
+  occurredAt: string;
+  merchant?: string | null;
+  note?: string | null;
+  visibility?: 'ledger' | 'private';
+  transferTargetAccountId?: string;
+  sourceExtractionId: string;
+}
 
 @Injectable()
 export class TransactionsService {
@@ -101,6 +118,88 @@ export class TransactionsService {
         source: created.source,
       },
     });
+
+    return created;
+  }
+
+  async createFromAiExtraction(
+    userId: string,
+    input: CreateTransactionFromAiInput,
+    tx?: TransactionClient,
+  ): Promise<TransactionSummary> {
+    await this.requireCreateTransaction(userId, input.ledgerId);
+
+    const account = await this.getVisibleActiveAccount(userId, input.accountId);
+    if (account.ledgerId !== input.ledgerId) {
+      throw accountNotFound();
+    }
+
+    let finalVisibility = input.visibility ?? 'ledger';
+    if (account.visibility === 'private') {
+      finalVisibility = 'private';
+    }
+
+    const categoryId = await this.resolveCategoryId(input.ledgerId, input.type, input.categoryId);
+    const transferMetadata = await this.resolveTransferMetadata(
+      userId,
+      input.ledgerId,
+      input.type,
+      input.transferTargetAccountId,
+      account.id,
+    );
+    if (transferMetadata?.targetAccount.visibility === 'private') {
+      finalVisibility = 'private';
+    }
+
+    const metadata: TransactionMetadata = {
+      ...(transferMetadata?.value ?? {}),
+      aiExtractionId: input.sourceExtractionId,
+    };
+    const createData: TransactionCreateData = {
+      ledgerId: input.ledgerId,
+      accountId: account.id,
+      categoryId,
+      type: input.type,
+      amount: input.amount,
+      currency: input.currency ?? account.currency,
+      occurredAt: new Date(input.occurredAt),
+      merchant: input.merchant,
+      note: input.note,
+      visibility: finalVisibility,
+      createdBy: userId,
+      source: 'ai_text',
+      metadata,
+    };
+    const balanceChanges = buildBalanceChanges({
+      accountId: createData.accountId,
+      type: createData.type,
+      amount: createData.amount,
+      transferTargetAccountId: transferMetadata?.value.transferTargetAccountId,
+    });
+    const created = tx
+      ? await this.transactionsRepository.createWithBalanceChangesInTransaction(tx, createData, balanceChanges)
+      : await this.transactionsRepository.createWithBalanceChanges(createData, balanceChanges);
+
+    await this.auditLogsService.record(
+      {
+        actorUserId: userId,
+        ledgerId: input.ledgerId,
+        targetType: 'transaction',
+        targetId: created.id,
+        action: 'transaction.create',
+        summary: 'Created transaction from AI text extraction',
+        metadata: {
+          type: created.type,
+          amount: created.amount,
+          currency: created.currency,
+          accountId: created.accountId,
+          categoryId: created.categoryId,
+          visibility: created.visibility,
+          source: created.source,
+        },
+      },
+      tx,
+    );
 
     return created;
   }

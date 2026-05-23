@@ -6,10 +6,16 @@
   "scripts": {
     "build": "pnpm -r --if-present build",
     "dev": "pnpm -r --parallel --if-present dev",
+    "e2e:m4:ai-text": "pnpm --filter @bookkeeping/api ai:e2e:text",
+    "hooks:install": "git config core.hooksPath .githooks",
     "lint": "pnpm -r --if-present lint",
     "format": "pnpm -r --if-present format",
     "test": "pnpm -r --if-present test",
-    "typecheck": "pnpm -r --if-present typecheck"
+    "typecheck": "pnpm -r --if-present typecheck",
+    "verify:admin-web": "pnpm --filter @bookkeeping/shared-types build && pnpm --filter @bookkeeping/api-client test && pnpm --filter @bookkeeping/admin-web typecheck && pnpm --filter @bookkeeping/admin-web build",
+    "verify:api": "pnpm --filter @bookkeeping/api test && pnpm --filter @bookkeeping/api typecheck",
+    "verify:scripts": "node --test apps/api/scripts/*.test.mjs",
+    "verify:workspace-light": "pnpm verify:scripts && pnpm verify:admin-web && pnpm verify:api && git diff --check"
   },
   "keywords": [
     "bookkeeping",
