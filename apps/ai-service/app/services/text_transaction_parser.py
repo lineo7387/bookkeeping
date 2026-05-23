@@ -37,12 +37,16 @@ def parse_text_transaction(request: TextTransactionRequest) -> TextTransactionRe
 
     category_name = match_category_name(request.input_text, request.context.category_names)
     account_hint = first_substring_match(request.input_text, request.context.account_hints)
+    missing_fields = build_missing_fields(category_name, account_hint)
 
     confidence = 0.91
     if category_name is None:
         confidence -= 0.08
     if account_hint is None:
         confidence -= 0.05
+    reason = "parsed amount and matched context hints"
+    if missing_fields:
+        reason = "parsed amount with missing confirmation fields"
 
     return TextTransactionResponse(
         taskId=request.task_id,
@@ -57,11 +61,13 @@ def parse_text_transaction(request: TextTransactionRequest) -> TextTransactionRe
             merchant=None,
             note=request.input_text,
             confidence=round(confidence, 2),
+            missingFields=missing_fields,
+            reviewMessage=build_review_message(missing_fields),
         ),
         rawResult=TextTransactionRawResult(
             provider="deterministic-parser",
             model="rules-v1",
-            reason="parsed amount and matched context hints",
+            reason=reason,
         ),
         error=None,
     )
@@ -106,6 +112,25 @@ def match_category_name(input_text: str, candidates: list[str]) -> str | None:
         return first_substring_match("餐饮", candidates)
 
     return None
+
+
+def build_missing_fields(category_name: str | None, account_hint: str | None) -> list[str]:
+    missing_fields: list[str] = []
+    if category_name is None:
+        missing_fields.append("categoryId")
+    if account_hint is None:
+        missing_fields.append("accountId")
+    return missing_fields
+
+
+def build_review_message(missing_fields: list[str]) -> str | None:
+    if not missing_fields:
+        return None
+    if missing_fields == ["categoryId"]:
+        return "请补充分类后再确认"
+    if missing_fields == ["accountId"]:
+        return "请补充账户后再确认"
+    return "请补充分类和账户后再确认"
 
 
 def current_iso_time(timezone: str) -> str:

@@ -181,6 +181,8 @@ function toCandidate(ledgerId: string, candidate: InternalAiTextCandidate): AiCa
     merchant: candidate.merchant,
     note: candidate.note,
     confidence: candidate.confidence,
+    missingFields: candidate.missingFields,
+    reviewMessage: candidate.reviewMessage,
   };
 }
 

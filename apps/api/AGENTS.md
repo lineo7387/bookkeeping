@@ -4,7 +4,7 @@
 
 `apps/api` 是 NestJS 主业务服务，是系统唯一对外业务 API。它负责认证、权限、账本协作、账户、分类、流水、统计、附件、AI 任务编排、后台管理和数据一致性。
 
-当前已完成认证与会话、用户资料、账本与成员权限、账户、分类、流水基础闭环、M2 账户余额流水联动、基础统计 API、审计日志基础写入与业务接入能力、后台只读 Admin API 基础能力，以及 M4 AI 文本记账 NestJS 闭环和后续加固。Prisma 7 运行时通过 PostgreSQL driver adapter 初始化。正式流水创建、更新、软删除和 AI 候选确认必须在同一个 Prisma transaction 内处理核心状态和相关账户余额。
+当前已完成认证与会话、用户资料、账本与成员权限、账户、分类、流水基础闭环、M2 账户余额流水联动、基础统计 API、审计日志基础写入与业务接入能力、后台只读 Admin API 基础能力，以及 M4 AI 文本记账 NestJS 闭环和后续加固。M4 低置信度候选会保留 `missingFields` / `reviewMessage` 补全提示，但确认正式流水仍必须重新校验账本权限、账户和分类。Prisma 7 运行时通过 PostgreSQL driver adapter 初始化。正式流水创建、更新、软删除和 AI 候选确认必须在同一个 Prisma transaction 内处理核心状态和相关账户余额。
 
 本地开发可通过 `pnpm --filter @bookkeeping/api admin:bootstrap -- --email <email> --password <password>` 创建或提权系统管理员账号。该脚本只用于本地/运维 bootstrap，不是公开 API。
 

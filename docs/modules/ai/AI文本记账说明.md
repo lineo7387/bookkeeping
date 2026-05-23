@@ -8,6 +8,8 @@ AI 文本记账只提高录入效率，不替代用户确认。FastAPI 只生成
 
 当前实现状态：M4 已完成 NestJS 闭环首版和 FastAPI 确定性 MVP parser。NestJS 已包含 `AiModule`、Prisma `ai_tasks` / `ai_extractions` 模型、内部 FastAPI client、候选保存、候选确认/拒绝，以及确认后创建 `source = ai_text` 正式流水并联动账户余额。后台 `GET /admin/ai/tasks` 已从占位空列表升级为真实只读摘要查询。
 
+低置信度候选已补充结构化提示：当 FastAPI 能识别金额但无法匹配分类或账户提示时，仍返回 `status = "succeeded"` 的候选，同时在候选中写入 `missingFields` 和 `reviewMessage`，由前端提示用户补充必填确认字段。NestJS 会校验并原样保存这些提示，但仍要求用户确认时提供合法 `accountId` 和匹配类型的 `categoryId`。
+
 ## 范围
 
 M4 包含：
@@ -165,7 +167,9 @@ ai_extractions(user_id, status)
         "accountHint": "微信",
         "merchant": null,
         "note": "晚饭",
-        "confidence": 0.91
+        "confidence": 0.91,
+        "missingFields": [],
+        "reviewMessage": null
       },
       "confidence": 0.91,
       "createdAt": "2026-05-19T11:00:00.000Z",
@@ -229,6 +233,38 @@ ai_extractions(user_id, status)
 ```
 
 拒绝后状态为 `rejected`，不创建正式流水，不删除任务和候选记录。
+
+### 低置信度候选提示
+
+M4 deterministic parser 的低置信度语义只用于“可生成候选但需要用户补全”的场景，不代表可以自动创建正式流水。当前规则：
+
+- 未匹配到账本分类提示时，`missingFields` 包含 `categoryId`。
+- 未匹配到账户提示时，`missingFields` 包含 `accountId`。
+- 同时缺少分类和账户时，`reviewMessage = "请补充分类和账户后再确认"`。
+- 只缺少分类时，`reviewMessage = "请补充分类后再确认"`。
+- 只缺少账户时，`reviewMessage = "请补充账户后再确认"`。
+
+示例候选：
+
+```json
+{
+  "ledgerId": "ledger_id",
+  "type": "expense",
+  "amount": "86.00",
+  "currency": "CNY",
+  "occurredAt": "2026-05-23T10:00:00.000+08:00",
+  "visibility": "ledger",
+  "categoryName": null,
+  "accountHint": null,
+  "merchant": null,
+  "note": "买东西86",
+  "confidence": 0.78,
+  "missingFields": ["categoryId", "accountId"],
+  "reviewMessage": "请补充分类和账户后再确认"
+}
+```
+
+即使候选包含 `missingFields`，确认接口仍只接受正式数据库 ID。前端可以用这些字段做补全提示，但不能把 `categoryName` 或 `accountHint` 当成正式 ID。
 
 ## 权限规则
 
@@ -393,6 +429,7 @@ pnpm e2e:m4:ai-text -- \
 - `POST /ledgers/:ledgerId/ai/text-parse` 返回 `AI_TASK_FAILED`：先确认 FastAPI 进程是否启动、NestJS 的 `AI_SERVICE_BASE_URL` 是否指向正确端口、`AI_SERVICE_TIMEOUT_MS` 是否过短，再用上方 FastAPI curl 检查 `/internal/ai/text-transaction` 是否可达。
 - FastAPI curl 返回 HTTP 422：请求体不满足内部契约，例如 `inputText` 为空、缺少 `taskId` / `ledgerId` / `userId`，或 `defaultCurrency` 不是 3 位货币码。
 - FastAPI 返回 `status = "failed"`：当前文本无法解析为可信候选，NestJS 会把任务标记为 `failed`，普通接口只返回统一错误，不暴露内部 URL 或模型原文。
+- FastAPI 返回低置信度候选：这是已识别金额但缺少分类或账户提示的正常结果，应展示 `reviewMessage` 并要求用户补齐 `missingFields` 对应的正式字段。
 - NestJS 日志提示候选字段结构非法：内部 client 会拒绝响应并标记任务失败，避免坏候选落库；优先检查 `candidate.type` 是否为 `income | expense`、`amount` 是否为字符串金额、`confidence` 是否在 `0..1`。
 - 确认候选返回账户或分类错误：确认请求仍必须提供当前用户可见账户；收入和支出还要求分类属于同一账本且类型匹配。
 - 确认候选后余额不符合预期：先确认正式流水类型、账户、金额和候选状态；AI 确认创建正式流水会复用 `TransactionsService.createFromAiExtraction()` 和账户余额联动逻辑。
@@ -424,7 +461,7 @@ uv run pytest
 
 - 票据 OCR、图片上传、对象存储和异步任务。
 - 移动端 AI 文本记账输入与候选确认页面。
-- 低置信度候选的字段补全提示。
+- 低置信度候选的前端补全交互、确认前字段高亮和更细粒度原因码。
 - 商户别名、分类偏好和账户匹配规则。
 - AI 任务重试、超时熔断、供应商成本统计和模型切换。
 - 用户确认、修改和拒绝行为的反馈闭环。

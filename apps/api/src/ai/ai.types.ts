@@ -1,5 +1,6 @@
 import type {
   AiCandidateTransaction,
+  AiCandidateMissingField,
   AiExtractionStatus,
   AiExtractionSummary,
   AiTaskStatus,
@@ -53,6 +54,8 @@ export interface InternalAiTextCandidate {
   merchant: string | null;
   note: string | null;
   confidence: number;
+  missingFields?: AiCandidateMissingField[];
+  reviewMessage?: string | null;
 }
 
 export interface InternalAiTextResult {
@@ -81,4 +84,4 @@ export interface ConfirmAiExtractionResult {
 
 export type AiTaskList = PaginatedItems<AiTaskDetail>;
 
-export type { AiCandidateTransaction, AiExtractionStatus, AiExtractionSummary, AiTaskStatus };
+export type { AiCandidateMissingField, AiCandidateTransaction, AiExtractionStatus, AiExtractionSummary, AiTaskStatus };

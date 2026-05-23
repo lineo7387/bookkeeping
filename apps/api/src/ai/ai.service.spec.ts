@@ -157,6 +157,59 @@ describe('AiService', () => {
     expect(transactionsService.createFromAiExtraction).not.toHaveBeenCalled();
   });
 
+  it('preserves low-confidence review hints from the internal AI candidate', async () => {
+    policy.canCreateTransaction.mockResolvedValue(true);
+    repository.createTextParseTask.mockResolvedValue(task);
+    repository.getTextParseContext.mockResolvedValue({
+      timezone: 'Asia/Shanghai',
+      defaultCurrency: 'CNY',
+      categoryNames: ['餐饮'],
+      accountHints: ['微信'],
+    });
+    internalClient.parseTextTransaction.mockResolvedValue({
+      status: 'succeeded',
+      candidate: {
+        ...candidate,
+        categoryName: null,
+        accountHint: null,
+        confidence: 0.78,
+        missingFields: ['categoryId', 'accountId'],
+        reviewMessage: '请补充分类和账户后再确认',
+      },
+      confidence: 0.78,
+      rawResult: { provider: 'deterministic', reason: 'parsed amount with missing confirmation fields' },
+    });
+    repository.createExtraction.mockResolvedValue({
+      ...extraction,
+      candidate: {
+        ...candidate,
+        categoryName: null,
+        accountHint: null,
+        confidence: 0.78,
+        missingFields: ['categoryId', 'accountId'],
+        reviewMessage: '请补充分类和账户后再确认',
+      },
+      confidence: 0.78,
+    });
+    repository.markTaskSucceeded.mockResolvedValue({ ...task, status: 'succeeded', extraction });
+
+    await service.parseAiText('user_1', 'ledger_1', {
+      inputText: '买东西86',
+      locale: 'zh-CN',
+    });
+
+    expect(repository.createExtraction).toHaveBeenCalledWith(
+      expect.objectContaining({
+        suggestedTransaction: expect.objectContaining({
+          confidence: 0.78,
+          missingFields: ['categoryId', 'accountId'],
+          reviewMessage: '请补充分类和账户后再确认',
+        }),
+        confidence: 0.78,
+      }),
+    );
+  });
+
   it('marks the task failed when the internal AI client throws', async () => {
     policy.canCreateTransaction.mockResolvedValue(true);
     repository.createTextParseTask.mockResolvedValue(task);

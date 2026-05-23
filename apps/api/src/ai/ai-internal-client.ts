@@ -106,12 +106,25 @@ function isInternalAiTextCandidate(value: unknown): value is InternalAiTextResul
     isNullableString(candidate.note) &&
     typeof candidate.confidence === 'number' &&
     candidate.confidence >= 0 &&
-    candidate.confidence <= 1
+    candidate.confidence <= 1 &&
+    isOptionalMissingFields(candidate.missingFields) &&
+    isOptionalNullableString(candidate.reviewMessage)
   );
 }
 
 function isNullableString(value: unknown): value is string | null {
   return value === null || typeof value === 'string';
+}
+
+function isOptionalNullableString(value: unknown): value is string | null | undefined {
+  return value === undefined || isNullableString(value);
+}
+
+function isOptionalMissingFields(value: unknown): value is Array<'accountId' | 'categoryId'> | undefined {
+  return (
+    value === undefined ||
+    (Array.isArray(value) && value.every((field) => field === 'accountId' || field === 'categoryId'))
+  );
 }
 
 function isNullableRecord(value: unknown): value is Record<string, unknown> | null {

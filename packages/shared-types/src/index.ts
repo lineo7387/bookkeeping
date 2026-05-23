@@ -243,6 +243,8 @@ export type AiTaskType = 'text_parse' | 'receipt_ocr' | 'classify' | 'insight';
 
 export type AiExtractionStatus = 'pending' | 'confirmed' | 'rejected';
 
+export type AiCandidateMissingField = 'accountId' | 'categoryId';
+
 export interface AiCandidateReceiptItem {
   name: string;
   quantity: string | null;
@@ -268,6 +270,8 @@ export interface AiCandidateTransaction {
   merchant: string | null;
   note: string | null;
   confidence: number;
+  missingFields?: AiCandidateMissingField[];
+  reviewMessage?: string | null;
   receipt?: AiCandidateReceipt;
 }
 

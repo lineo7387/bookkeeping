@@ -43,6 +43,8 @@ class TextTransactionCandidate(BaseModel):
     merchant: str | None = None
     note: str | None = None
     confidence: float = Field(ge=0, le=1)
+    missing_fields: list[Literal["accountId", "categoryId"]] = Field(default_factory=list, alias="missingFields")
+    review_message: str | None = Field(default=None, alias="reviewMessage")
 
 
 class TextTransactionRawResult(BaseModel):

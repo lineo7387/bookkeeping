@@ -28,7 +28,7 @@ NestJS 服务是系统唯一对外业务 API，负责认证、权限、账本协
 - 已完成基础统计 API：月度收入/支出汇总、分类占比、账户余额统计和成员消费统计，统计查询按当前用户过滤私密流水和私密账户。
 - 已完成审计日志基础写入与业务接入：`audit_logs` Prisma 模型、`AuditLogsModule`、Repository、Service、metadata 敏感字段脱敏，以及账本、成员、账户、分类、流水成功写操作审计。
 - 已完成 M3 后台管理 API 基础能力：`users.is_system_admin`、`SystemAdminGuard`、只读用户列表、账本列表、AI 任务摘要列表和审计日志查询。
-- 已完成 M4 AI 文本记账 NestJS 闭环首版：`AiModule`、`ai_tasks`、`ai_extractions`、内部 FastAPI client、文本解析任务、候选保存、候选确认/拒绝，以及确认后创建 `source = ai_text` 正式流水并复用账户余额联动逻辑。
+- 已完成 M4 AI 文本记账 NestJS 闭环首版：`AiModule`、`ai_tasks`、`ai_extractions`、内部 FastAPI client、文本解析任务、候选保存、候选确认/拒绝、低置信度候选补全提示，以及确认后创建 `source = ai_text` 正式流水并复用账户余额联动逻辑。
 - 已提供 `pnpm e2e:m4:ai-text` 本地闭环联调脚本，脚本通过 NestJS 对外 API 创建测试用户、账本、账户、分类、AI 文本任务和正式流水，不直接请求 FastAPI。
 - 已完成数据模型：`users`、`user_sessions`、`ledgers`、`ledger_members`、`ledger_invitations`、`accounts`、`categories`、`transactions`、`ai_tasks`、`ai_extractions`、`audit_logs`。其中 `users.is_system_admin` 表示平台系统管理员权限，不替代账本成员权限。
 
@@ -68,7 +68,7 @@ pnpm e2e:m4:ai-text
 - 增加认证 E2E 测试和真实数据库集成测试。
 - 增加邀请链接和邀请接受流程。
 - 增加余额重算。
-- M4 后续可继续补充低置信度候选补全、独立 Admin AI 任务列表页和真实模型供应商接入；FastAPI 仍只返回候选结果。
+- M4 后续可继续补充独立 Admin AI 任务列表页、本地开发体验和真实模型供应商接入；FastAPI 仍只返回候选结果。
 
 ## M1/M1.5 模块文档
 

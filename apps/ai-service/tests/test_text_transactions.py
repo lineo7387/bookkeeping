@@ -73,3 +73,27 @@ def test_text_transaction_unparseable_returns_failed_status():
     assert body["status"] == "failed"
     assert body["candidate"] is None
     assert body["error"]["code"] == "AI_PARSE_FAILED"
+
+
+def test_text_transaction_low_confidence_returns_review_hints():
+    response = client.post(
+        "/internal/ai/text-transaction",
+        json={
+            "taskId": "task_1",
+            "ledgerId": "ledger_1",
+            "userId": "user_1",
+            "inputText": "买东西86",
+            "locale": "zh-CN",
+            "timezone": "Asia/Shanghai",
+            "defaultCurrency": "CNY",
+            "context": {"categoryNames": ["餐饮"], "accountHints": ["微信"]},
+        },
+    )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["status"] == "succeeded"
+    assert body["candidate"]["confidence"] < 0.8
+    assert body["candidate"]["missingFields"] == ["categoryId", "accountId"]
+    assert body["candidate"]["reviewMessage"] == "请补充分类和账户后再确认"
+    assert body["rawResult"]["reason"] == "parsed amount with missing confirmation fields"
